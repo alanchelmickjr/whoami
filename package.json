@@ -1,0 +1,32 @@
+{
+  "name": "whoami-jetson-facial-recognition",
+  "version": "1.0.0",
+  "description": "Secure facial recognition system for Jetson Nano using Gun.js with hardware-backed encryption",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": [
+    "facial-recognition",
+    "jetson-nano",
+    "gun.js",
+    "security",
+    "edge-computing"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "gun": "^0.2020.1240",
+    "sea": "^3.0.0",
+    "@vladmandic/face-api": "^1.7.13",
+    "canvas": "^2.11.2",
+    "opencv4nodejs": "^6.0.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
