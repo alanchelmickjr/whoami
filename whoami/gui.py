@@ -278,31 +278,44 @@ class FaceRecognitionGUI:
             messagebox.showinfo("Info", "No faces in database")
             return
         
-        # Create selection dialog
+        # If only one face, remove it directly with confirmation
+        if len(names) == 1:
+            name = names[0]
+            if messagebox.askyesno("Remove Face", f"Remove {name} from database?"):
+                if self.recognizer.remove_face(name):
+                    self.update_faces_list()
+                    self.status_var.set(f"Removed face: {name}")
+                else:
+                    messagebox.showerror("Error", "Failed to remove face")
+            return
+        
+        # Multiple faces - show selection dialog
         dialog = tk.Toplevel(self.root)
         dialog.title("Remove Face")
         dialog.geometry("300x200")
         
-        ttk.Label(dialog, text="Select face to remove:").pack(pady=10)
+        # No need for redundant "Select face to remove" label - title says it all
         
         listbox = tk.Listbox(dialog)
-        listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         for name in sorted(names):
             listbox.insert(tk.END, name)
+        
+        # Select first item by default
+        listbox.selection_set(0)
         
         def remove():
             selection = listbox.curselection()
             if selection:
                 name = listbox.get(selection[0])
-                if messagebox.askyesno("Confirm", f"Remove {name} from database?"):
-                    if self.recognizer.remove_face(name):
-                        messagebox.showinfo("Success", f"Removed {name}")
-                        self.update_faces_list()
-                        self.status_var.set(f"Removed face: {name}")
-                        dialog.destroy()
-                    else:
-                        messagebox.showerror("Error", "Failed to remove face")
+                # Remove the redundant confirmation - user already selected and clicked Remove
+                if self.recognizer.remove_face(name):
+                    self.update_faces_list()
+                    self.status_var.set(f"Removed face: {name}")
+                    dialog.destroy()
+                else:
+                    messagebox.showerror("Error", "Failed to remove face")
         
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=10)

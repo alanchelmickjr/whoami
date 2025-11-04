@@ -33,38 +33,36 @@ class FaceRecognizer:
     
     def create_pipeline(self) -> dai.Pipeline:
         """
-        Create DepthAI pipeline for Oak D camera
+        Create DepthAI pipeline for Oak D camera (DepthAI V3 API)
         
         Returns:
-            Configured DepthAI pipeline
+            Configured DepthAI pipeline with output queue
         """
         pipeline = dai.Pipeline()
         
-        # Create color camera node
-        cam_rgb = pipeline.create(dai.node.ColorCamera)
-        cam_rgb.setPreviewSize(640, 480)
-        cam_rgb.setInterleaved(False)
-        cam_rgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.RGB)
+        # Use the new Camera node with V3 API - don't forget .build()
+        cam = pipeline.create(dai.node.Camera).build()
         
-        # Create output node
-        xout_rgb = pipeline.create(dai.node.XLinkOut)
-        xout_rgb.setStreamName("rgb")
+        # Request output with specific resolution and format
+        # This replaces the old setPreviewSize and preview output
+        self.camera_output = cam.requestOutput((640, 480), type=dai.ImgFrame.Type.RGB888p)
         
-        # Link camera to output
-        cam_rgb.preview.link(xout_rgb.input)
+        # Create output queue directly from the camera output (no more XLink nodes needed)
+        self.output_queue = self.camera_output.createOutputQueue()
         
         return pipeline
     
     def start_camera(self) -> bool:
         """
-        Start the Oak D camera
+        Start the Oak D camera with V3 API
         
         Returns:
             True if successful, False otherwise
         """
         try:
             self.pipeline = self.create_pipeline()
-            self.device = dai.Device(self.pipeline)
+            # V3 API: Use pipeline.start() instead of dai.Device(pipeline)
+            self.pipeline.start()
             return True
         except Exception as e:
             print(f"Error starting camera: {e}")
@@ -72,25 +70,28 @@ class FaceRecognizer:
     
     def stop_camera(self):
         """Stop the Oak D camera"""
-        if self.device:
-            self.device.close()
-            self.device = None
+        if self.pipeline:
+            # V3 API: Stop the pipeline instead of closing device
+            self.pipeline.stop()
+            self.pipeline = None
     
     def get_frame(self) -> Optional[np.ndarray]:
         """
-        Get current frame from camera
+        Get current frame from camera using V3 API
         
         Returns:
             Frame as numpy array or None if unavailable
         """
-        if not self.device:
+        if not self.pipeline or not self.pipeline.isRunning():
             return None
         
         try:
-            queue = self.device.getOutputQueue(name="rgb", maxSize=4, blocking=False)
-            in_rgb = queue.get()
-            frame = in_rgb.getCvFrame()
-            return frame
+            # V3 API: Use the output queue created during pipeline setup
+            if self.output_queue.has():
+                in_rgb = self.output_queue.get()
+                frame = in_rgb.getCvFrame()
+                return frame
+            return None
         except Exception as e:
             print(f"Error getting frame: {e}")
             return None

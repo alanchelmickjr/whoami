@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-11-04 00:12:03",
+  "platform": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9 (main, Oct 14 2025, 13:52:31) [Clang 17.0.0 (clang-1700.0.13.3)]",
+    "is_jetson": false,
+    "is_mac": true,
+    "is_m_series": true
+  },
+  "results": {
+    "Python Environment": true,
+    "Camera Detection": false,
+    "Camera Stream": false,
+    "Face Detection": false,
+    "WhoAmI CLI": true,
+    "WhoAmI GUI": false,
+    "Permissions": true
+  },
+  "summary": {
+    "passed": 3,
+    "failed": 4,
+    "skipped": 0
+  }
+}
