@@ -113,7 +113,6 @@ def create_demo_recognizer():
         Modified FaceRecognizer that uses demo camera if Oak D not available
     """
     from whoami.face_recognizer import FaceRecognizer
-    import depthai as dai
     
     class DemoFaceRecognizer(FaceRecognizer):
         """Face recognizer with demo camera fallback"""

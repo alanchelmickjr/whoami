@@ -208,9 +208,13 @@ class FaceRecognitionGUI:
                 
                 photo = ImageTk.PhotoImage(image=img)
                 
-                # Update label
-                self.video_label.configure(image=photo)
-                self.video_label.image = photo
+                # Update label on main thread using after()
+                self.root.after(0, self._update_video_label, photo)
+    
+    def _update_video_label(self, photo):
+        """Update video label on main thread (thread-safe)"""
+        self.video_label.configure(image=photo)
+        self.video_label.image = photo
     
     def add_face_dialog(self):
         """Show dialog to add a new face"""

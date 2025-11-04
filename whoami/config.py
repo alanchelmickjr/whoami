@@ -5,6 +5,7 @@ Handles settings for the facial recognition system
 
 import json
 import os
+import copy
 from typing import Dict, Any
 
 
@@ -37,7 +38,7 @@ class Config:
             config_path: Path to configuration file
         """
         self.config_path = config_path
-        self.config = self.DEFAULT_CONFIG.copy()
+        self.config = copy.deepcopy(self.DEFAULT_CONFIG)
         self.load()
     
     def load(self):
