@@ -1,5 +1,9 @@
 # WhoAmI - Facial Recognition System
 
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Oak D](https://img.shields.io/badge/Oak%20D-Series%203-green.svg)](https://docs.luxonis.com/)
+
 A simple, portable, and modular facial recognition framework designed for Oak D Series 3 cameras and Jetson Orin Nano. Built with security and ease of use in mind.
 
 ## Features
