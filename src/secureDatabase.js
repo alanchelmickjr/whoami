@@ -175,16 +175,32 @@ class SecureDatabase {
       throw new Error('Database not initialized');
     }
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const faceIds = [];
+      let settled = false;
+      
       this.user.get('faces').map().once((data, id) => {
         if (id && id !== '_') {
           faceIds.push(id);
         }
       });
 
-      // Give Gun time to retrieve all data
-      setTimeout(() => resolve(faceIds), 1000);
+      // Use Gun's once callback to wait for initial data load
+      this.user.get('faces').once(() => {
+        if (!settled) {
+          settled = true;
+          // Small delay to ensure all map callbacks have fired
+          setTimeout(() => resolve(faceIds), 100);
+        }
+      });
+
+      // Timeout as fallback in case Gun doesn't call once
+      setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          resolve(faceIds);
+        }
+      }, 2000);
     });
   }
 

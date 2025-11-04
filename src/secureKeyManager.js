@@ -78,14 +78,25 @@ class SecureKeyManager {
     // Derive device-specific key from hardware
     const hwIdentifier = this.getHardwareIdentifier();
     
+    // Generate hardware-derived salt from the hardware identifier
+    // This ensures each device has a unique salt while remaining deterministic
+    const salt = createHash('sha256')
+      .update(hwIdentifier)
+      .update('salt-v1')
+      .digest();
+    
     // Use scrypt for key derivation (memory-hard, resistant to brute force)
-    const salt = createHash('sha256').update('whoami-jetson-salt').digest();
     this.deviceKey = scryptSync(hwIdentifier, salt, 32);
     
-    // Derive encryption key from device key
+    // Derive encryption key from device key with hardware-derived salt
     // This adds another layer - even if someone extracts deviceKey, 
     // they still need to derive the encryption key properly
-    this.encryptionKey = scryptSync(this.deviceKey, 'encryption-key-salt', 32);
+    const encryptionSalt = createHash('sha256')
+      .update(this.deviceKey)
+      .update('encryption-key-v1')
+      .digest();
+    
+    this.encryptionKey = scryptSync(this.deviceKey, encryptionSalt, 32);
     
     this.initialized = true;
   }

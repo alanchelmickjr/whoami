@@ -199,7 +199,7 @@ class WhoAmI {
       databaseInitialized: secureDatabase.initialized,
       modelsLoaded: facialRecognition.modelsLoaded,
       securityLevel: 'Hardware-backed double encryption',
-      reversEngineeringResistance: 'Device-specific keys derived from hardware'
+      reverseEngineeringResistance: 'Device-specific keys derived from hardware'
     };
   }
 }
