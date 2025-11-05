@@ -15,6 +15,10 @@ A simple, portable, and modular facial recognition framework designed for Oak D 
 - 🔒 **Secure**: Local processing, no cloud dependencies
 - 🚀 **Portable**: Lightweight and modular design for easy integration
 - 🤖 **Robot-Ready**: Perfect for robotics applications on Jetson platforms
+- 🔌 **New Class-Based API**: Clean, modular, and thread-safe face recognition library
+- 📊 **Batch Processing**: Process multiple images and videos efficiently
+- 🔔 **Event Callbacks**: React to face detection and recognition events
+- 🧵 **Thread-Safe**: Designed for multi-threaded applications
 
 ## Hardware Requirements
 
@@ -91,6 +95,41 @@ python run_cli.py recognize
 python run_cli.py clear
 ```
 
+### 🆕 Face Recognition API (Refactored)
+
+The new Face Recognition API provides a clean, class-based interface with improved modularity and features:
+
+```python
+from whoami.face_recognition_api import create_face_recognition_api
+
+# Quick start with the new API
+api = create_face_recognition_api()
+
+# Start camera and process frames
+with api:
+    api.start_camera()
+    
+    # Add a face to database
+    api.add_face("John Doe")
+    
+    # Real-time recognition
+    while True:
+        results = api.process_frame()
+        for result in results:
+            print(f"Recognized: {result.name} ({result.confidence:.2f})")
+```
+
+**Key Features of the New API:**
+- **Separated Concerns**: Camera, detection, recognition, and database are separate components
+- **Event-Driven**: Register callbacks for face detection, recognition, and other events
+- **Thread-Safe**: Built-in support for multi-threaded applications
+- **Flexible Configuration**: Extensive configuration options via `RecognitionConfig`
+- **Multiple Camera Types**: Support for OAK-D and webcam with easy extensibility
+- **Batch Processing**: Efficiently process directories of images or video files
+- **Context Manager Support**: Automatic resource cleanup
+
+See the comprehensive [API Reference](docs/API_REFERENCE.md) and [Usage Guide](docs/USAGE_GUIDE.md) for detailed documentation.
+
 ## Architecture
 
 The system is designed with modularity in mind:
@@ -98,15 +137,24 @@ The system is designed with modularity in mind:
 ```
 whoami/
 ├── whoami/
-│   ├── __init__.py          # Package initialization
-│   ├── face_recognizer.py   # Core face recognition logic
-│   ├── gui.py               # GUI application
-│   ├── cli.py               # CLI application
-│   └── config.py            # Configuration management
-├── run_gui.py               # GUI entry point
-├── run_cli.py               # CLI entry point
-├── requirements.txt         # Python dependencies
-└── setup.py                 # Installation script
+│   ├── __init__.py                  # Package initialization
+│   ├── face_recognizer.py           # Original core face recognition logic
+│   ├── face_recognition_api.py      # 🆕 New refactored API
+│   ├── gui.py                       # GUI application
+│   ├── cli.py                       # CLI application
+│   └── config.py                    # Configuration management
+├── docs/
+│   ├── API_REFERENCE.md             # 🆕 Complete API documentation
+│   └── USAGE_GUIDE.md               # 🆕 Usage guide with examples
+├── examples/
+│   ├── api_basic_usage.py          # 🆕 Basic API usage examples
+│   ├── api_advanced_features.py    # 🆕 Advanced features demo
+│   ├── api_robotics_integration.py # 🆕 Robotics integration examples
+│   └── api_batch_processing.py     # 🆕 Batch processing examples
+├── run_gui.py                      # GUI entry point
+├── run_cli.py                      # CLI entry point
+├── requirements.txt                 # Python dependencies
+└── setup.py                        # Installation script
 ```
 
 ### Core Components
@@ -134,7 +182,54 @@ whoami/
 
 ## Integration
 
-This framework is designed to be easily integrated into larger robotics systems:
+This framework is designed to be easily integrated into larger robotics systems. You can use either the original API or the new refactored API:
+
+### Using the New Face Recognition API (Recommended)
+
+```python
+from whoami.face_recognition_api import (
+    FaceRecognitionAPI,
+    RecognitionConfig,
+    CameraType,
+    RecognitionModel
+)
+
+# Configure the API
+config = RecognitionConfig(
+    camera_type=CameraType.OAK_D,
+    tolerance=0.5,
+    model=RecognitionModel.HOG,  # or CNN for higher accuracy
+    process_every_n_frames=2,     # Skip frames for performance
+    database_path="my_faces.pkl"
+)
+
+# Initialize API
+api = FaceRecognitionAPI(config)
+
+# Use as context manager for automatic cleanup
+with api:
+    api.start_camera()
+    
+    # Add faces to database
+    api.add_face("John Doe")
+    
+    # Process frames
+    while True:
+        results = api.process_frame()
+        for result in results:
+            if result.name != "Unknown":
+                print(f"Recognized: {result.name} ({result.confidence:.2f})")
+                print(f"Location: {result.location}")
+
+# Or use event callbacks
+def on_face_recognized(results):
+    for result in results:
+        print(f"Event: Recognized {result.name}")
+
+api.register_callback('on_face_recognized', on_face_recognized)
+```
+
+### Using the Original API
 
 ```python
 from whoami.face_recognizer import FaceRecognizer
@@ -228,7 +323,45 @@ pip install -e .
 
 # Run tests (if available)
 python -m pytest tests/
+
+# Run example scripts
+python examples/api_basic_usage.py
+python examples/api_advanced_features.py
+python examples/api_robotics_integration.py
+python examples/api_batch_processing.py
 ```
+
+## 📚 Documentation
+
+- **[API Reference](docs/API_REFERENCE.md)**: Complete API documentation with all classes, methods, and parameters
+- **[Usage Guide](docs/USAGE_GUIDE.md)**: Comprehensive guide with code examples and best practices
+- **[Examples](examples/)**: Working example scripts demonstrating various features
+
+### Example Scripts
+
+1. **[api_basic_usage.py](examples/api_basic_usage.py)**: Basic face recognition operations
+   - Starting/stopping camera
+   - Adding faces to database
+   - Real-time recognition
+   - Database management
+
+2. **[api_advanced_features.py](examples/api_advanced_features.py)**: Advanced capabilities
+   - Event callbacks
+   - Multi-threaded processing
+   - Adaptive recognition
+   - Facial landmarks analysis
+
+3. **[api_robotics_integration.py](examples/api_robotics_integration.py)**: Robotics applications
+   - Person tracking
+   - State management
+   - Security robot implementation
+   - Interactive robot behaviors
+
+4. **[api_batch_processing.py](examples/api_batch_processing.py)**: Batch operations
+   - Process directories of images
+   - Video file processing
+   - Export results to CSV/JSON
+   - Dataset analysis
 
 ## License
 
@@ -240,12 +373,19 @@ For issues and questions, please open an issue on GitHub.
 
 ## Roadmap
 
+- [x] ~~Class-based refactored API~~ ✅ Complete!
+- [x] ~~Event callbacks system~~ ✅ Complete!
+- [x] ~~Thread-safe operations~~ ✅ Complete!
+- [x] ~~Batch processing support~~ ✅ Complete!
 - [ ] Multi-camera support
 - [ ] GPU acceleration on Jetson
 - [ ] REST API for remote access
-- [ ] Face detection confidence thresholds
-- [ ] Export/import face database
+- [x] ~~Face detection confidence thresholds~~ ✅ Complete!
+- [x] ~~Export/import face database~~ ✅ Complete!
 - [ ] Integration with ROS (Robot Operating System)
+- [ ] Real-time streaming API
+- [ ] Face tracking across frames
+- [ ] Age and gender estimation
 
 ## Credits
 
