@@ -278,9 +278,11 @@ class FaceDatabaseManager:
         self.names: List[str] = []
         self.metadata: List[Dict[str, Any]] = []
         self._lock = threading.RLock()
+        self._unknown_counter = 0  # Counter for unknown faces
         
         # Load existing database
         self.load()
+        self._initialize_unknown_counter()
     
     def add_face(self, name: str, encoding: np.ndarray, 
                  metadata: Optional[Dict[str, Any]] = None) -> bool:
@@ -329,6 +331,29 @@ class FaceDatabaseManager:
             except Exception as e:
                 logger.error(f"Failed to remove face: {e}")
                 return False
+    
+    def get_next_unknown_number(self) -> int:
+        """Get the next available unknown number"""
+        with self._lock:
+            self._unknown_counter += 1
+            # Check if this number is already used
+            while f"unknown_{self._unknown_counter}" in self.names:
+                self._unknown_counter += 1
+            return self._unknown_counter
+    
+    def _initialize_unknown_counter(self) -> None:
+        """Initialize the unknown counter based on existing unknown faces"""
+        with self._lock:
+            # Find the highest unknown number in the database
+            max_num = 0
+            for name in self.names:
+                if name.startswith("unknown_"):
+                    try:
+                        num = int(name.split("_")[1])
+                        max_num = max(max_num, num)
+                    except (IndexError, ValueError):
+                        pass
+            self._unknown_counter = max_num
     
     def get_all_names(self) -> List[str]:
         """Get list of all unique names in database"""
@@ -873,23 +898,31 @@ class FaceRecognitionAPI:
     # Database Management
     # ========================================================================
     
-    def add_face(self, name: str, frame: Optional[np.ndarray] = None,
+    def add_face(self, name: Optional[str] = None, frame: Optional[np.ndarray] = None,
                 encoding: Optional[np.ndarray] = None,
-                metadata: Optional[Dict[str, Any]] = None) -> bool:
+                metadata: Optional[Dict[str, Any]] = None,
+                face_index: int = 0) -> bool:
         """
         Add a face to the database
         
         Args:
-            name: Name of the person
+            name: Name of the person (if None, auto-generates unknown_N)
             frame: Frame containing the face (provide either frame or encoding)
             encoding: Pre-computed face encoding (provide either frame or encoding)
             metadata: Optional metadata to store with the face
+            face_index: Index of face to add when multiple faces detected (default: 0)
         
         Returns:
             True if successful
         """
         with self._get_lock():
             try:
+                # Auto-generate name if not provided
+                if name is None or name.strip() == "":
+                    unknown_num = self.database.get_next_unknown_number()
+                    name = f"unknown_{unknown_num}"
+                    logger.info(f"Auto-generating name: {name}")
+                
                 # Get encoding from frame if not provided
                 if encoding is None:
                     if frame is None:
@@ -911,9 +944,12 @@ class FaceRecognitionAPI:
                         return False
                     
                     if len(detections) > 1:
-                        logger.warning("Multiple faces detected. Using first face.")
+                        logger.info(f"Multiple faces detected ({len(detections)}). Using face at index {face_index}.")
+                        if face_index >= len(detections):
+                            logger.error(f"Face index {face_index} out of range (detected {len(detections)} faces)")
+                            return False
                     
-                    encoding = detections[0].encoding
+                    encoding = detections[face_index].encoding
                 
                 # Add to database
                 success = self.database.add_face(name, encoding, metadata)
@@ -925,6 +961,96 @@ class FaceRecognitionAPI:
                 
             except Exception as e:
                 logger.error(f"Failed to add face: {e}")
+                self._trigger_callback('on_error', e)
+                return False
+    
+    def add_face_at_location(self, name: Optional[str] = None,
+                             frame: Optional[np.ndarray] = None,
+                             face_location: Tuple[int, int, int, int] = None,
+                             metadata: Optional[Dict[str, Any]] = None) -> bool:
+        """
+        Add a specific face at a given location to the database
+        
+        Args:
+            name: Name of the person (if None, auto-generates unknown_N)
+            frame: Frame containing the face
+            face_location: Location of face to add (top, right, bottom, left)
+            metadata: Optional metadata to store with the face
+        
+        Returns:
+            True if successful
+        """
+        with self._get_lock():
+            try:
+                # Auto-generate name if not provided
+                if name is None or name.strip() == "":
+                    unknown_num = self.database.get_next_unknown_number()
+                    name = f"unknown_{unknown_num}"
+                    logger.info(f"Auto-generating name: {name}")
+                
+                if frame is None:
+                    frame = self.get_frame()
+                    if frame is None:
+                        logger.error("No frame provided")
+                        return False
+                
+                if face_location is None:
+                    logger.error("No face location provided")
+                    return False
+                
+                # Detect all faces to find the matching one
+                detections = self.detector.detect_faces(
+                    frame,
+                    return_encodings=True,
+                    num_jitters=self.config.num_jitters
+                )
+                
+                if not detections:
+                    logger.warning("No faces detected in frame")
+                    return False
+                
+                # Find the face closest to the specified location
+                best_match_idx = None
+                min_distance = float('inf')
+                
+                for idx, detection in enumerate(detections):
+                    # Calculate distance between centers of bounding boxes
+                    det_top, det_right, det_bottom, det_left = detection.location
+                    spec_top, spec_right, spec_bottom, spec_left = face_location
+                    
+                    det_center_x = (det_left + det_right) / 2
+                    det_center_y = (det_top + det_bottom) / 2
+                    spec_center_x = (spec_left + spec_right) / 2
+                    spec_center_y = (spec_top + spec_bottom) / 2
+                    
+                    distance = ((det_center_x - spec_center_x) ** 2 +
+                               (det_center_y - spec_center_y) ** 2) ** 0.5
+                    
+                    if distance < min_distance:
+                        min_distance = distance
+                        best_match_idx = idx
+                
+                if best_match_idx is None:
+                    logger.error("Could not match face location")
+                    return False
+                
+                # Use a reasonable threshold for matching (e.g., 50 pixels)
+                if min_distance > 50:
+                    logger.warning(f"Face location match distance ({min_distance:.1f}) may be too far")
+                
+                encoding = detections[best_match_idx].encoding
+                
+                # Add to database
+                success = self.database.add_face(name, encoding, metadata)
+                
+                if success:
+                    self._trigger_callback('on_face_added', name)
+                    logger.info(f"Added face '{name}' at location {face_location}")
+                
+                return success
+                
+            except Exception as e:
+                logger.error(f"Failed to add face at location: {e}")
                 self._trigger_callback('on_error', e)
                 return False
     

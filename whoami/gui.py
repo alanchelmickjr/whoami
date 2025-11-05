@@ -37,6 +37,11 @@ class FaceRecognitionGUI:
         self.add_mode = False
         self.pending_name = None
         
+        # Face selection for adding
+        self.detected_face_locations = []
+        self.selected_face_index = None
+        self.selected_face_location = None
+        
         # Create UI
         self.create_widgets()
         
@@ -62,6 +67,9 @@ class FaceRecognitionGUI:
         
         self.video_label = ttk.Label(video_frame)
         self.video_label.pack(expand=True, fill=tk.BOTH)
+        
+        # Bind click event for face selection
+        self.video_label.bind("<Button-1>", self.on_video_click)
         
         # Right panel - Controls
         control_frame = ttk.Frame(main_frame)
@@ -166,6 +174,9 @@ class FaceRecognitionGUI:
                 # Detect and recognize faces
                 face_locations, face_encodings = self.recognizer.detect_faces(frame)
                 
+                # Store detected face locations for selection
+                self.detected_face_locations = face_locations
+                
                 if not self.add_mode:
                     # Recognition mode
                     recognized_faces = self.recognizer.recognize_faces(face_encodings)
@@ -191,20 +202,41 @@ class FaceRecognitionGUI:
                             cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255), 1
                         )
                 else:
-                    # Add mode - draw rectangles around detected faces
-                    for (top, right, bottom, left) in face_locations:
-                        cv2.rectangle(frame, (left, top), (right, bottom), (255, 255, 0), 2)
+                    # Add mode - draw rectangles around detected faces with selection highlight
+                    for idx, (top, right, bottom, left) in enumerate(face_locations):
+                        # Check if this face is selected
+                        if self.selected_face_index == idx:
+                            # Selected face - thick green border
+                            color = (0, 255, 0)
+                            thickness = 4
+                            label = "SELECTED - Click Capture"
+                        else:
+                            # Unselected face - yellow border
+                            color = (255, 255, 0)
+                            thickness = 2
+                            label = "Click to select"
+                        
+                        cv2.rectangle(frame, (left, top), (right, bottom), color, thickness)
+                        
+                        # Draw label background
+                        cv2.rectangle(
+                            frame, (left, top - 25), (right, top), color, cv2.FILLED
+                        )
                         cv2.putText(
-                            frame, "Position face here", (left, top - 10),
-                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 0), 1
+                            frame, label, (left + 6, top - 6),
+                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255), 1
                         )
                 
                 # Convert frame to PhotoImage
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 img = Image.fromarray(frame_rgb)
                 
+                # Store original size for click mapping
+                self.video_original_size = img.size
+                
                 # Resize to fit display
                 img.thumbnail((640, 480), Image.Resampling.LANCZOS)
+                self.video_display_size = img.size
                 
                 photo = ImageTk.PhotoImage(image=img)
                 
@@ -216,14 +248,45 @@ class FaceRecognitionGUI:
         self.video_label.configure(image=photo)
         self.video_label.image = photo
     
+    def on_video_click(self, event):
+        """Handle click on video to select a face"""
+        if not self.add_mode or not self.detected_face_locations:
+            return
+        
+        # Get click coordinates relative to the label
+        click_x, click_y = event.x, event.y
+        
+        # Scale coordinates to match original frame size
+        if hasattr(self, 'video_display_size') and hasattr(self, 'video_original_size'):
+            scale_x = self.video_original_size[0] / self.video_display_size[0]
+            scale_y = self.video_original_size[1] / self.video_display_size[1]
+            
+            # Convert to original frame coordinates
+            orig_x = click_x * scale_x
+            orig_y = click_y * scale_y
+            
+            # Find which face was clicked
+            for idx, (top, right, bottom, left) in enumerate(self.detected_face_locations):
+                if left <= orig_x <= right and top <= orig_y <= bottom:
+                    self.selected_face_index = idx
+                    self.selected_face_location = (top, right, bottom, left)
+                    self.status_var.set(f"Selected face {idx + 1} of {len(self.detected_face_locations)}")
+                    break
+    
     def add_face_dialog(self):
         """Show dialog to add a new face"""
-        name = simpledialog.askstring("Add Face", "Enter person's name:")
+        name = simpledialog.askstring("Add Face", "Enter person's name (leave empty for auto-numbering):")
         
-        if name:
-            self.pending_name = name
+        if name is not None:  # User clicked OK (even if empty string)
+            self.pending_name = name if name.strip() else None
             self.add_mode = True
-            self.status_var.set(f"Position face in frame and click 'Capture'")
+            self.selected_face_index = None
+            self.selected_face_location = None
+            
+            if self.pending_name:
+                self.status_var.set(f"Click on {self.pending_name}'s face, then click 'Capture'")
+            else:
+                self.status_var.set("Click on a face to select it, then click 'Capture' (auto-numbering)")
             
             # Show capture dialog
             self.show_capture_dialog()
@@ -232,38 +295,101 @@ class FaceRecognitionGUI:
         """Show capture dialog window"""
         capture_window = tk.Toplevel(self.root)
         capture_window.title("Capture Face")
-        capture_window.geometry("300x100")
+        capture_window.geometry("400x150")
+        
+        if self.pending_name:
+            instruction_text = f"Click on {self.pending_name}'s face in the camera view,\nthen click 'Capture'"
+        else:
+            instruction_text = "Click on a face in the camera view to select it,\nthen click 'Capture' for auto-numbering"
         
         label = ttk.Label(
-            capture_window, 
-            text=f"Position {self.pending_name}'s face in the camera view",
-            wraplength=280
+            capture_window,
+            text=instruction_text,
+            wraplength=380
         )
         label.pack(pady=10)
+        
+        # Status label for face selection
+        self.capture_status_label = ttk.Label(
+            capture_window,
+            text="No face selected",
+            foreground="red"
+        )
+        self.capture_status_label.pack(pady=5)
+        
+        # Update capture status periodically
+        def update_capture_status():
+            if self.selected_face_index is not None:
+                self.capture_status_label.config(
+                    text=f"Face {self.selected_face_index + 1} selected",
+                    foreground="green"
+                )
+            else:
+                self.capture_status_label.config(
+                    text="No face selected - click on a face",
+                    foreground="red"
+                )
+            
+            if capture_window.winfo_exists():
+                capture_window.after(100, update_capture_status)
+        
+        update_capture_status()
         
         button_frame = ttk.Frame(capture_window)
         button_frame.pack(pady=10)
         
         def capture():
             if self.current_frame is not None:
-                if self.recognizer.add_face(self.pending_name, self.current_frame):
-                    messagebox.showinfo("Success", f"Face added for {self.pending_name}")
-                    self.update_faces_list()
-                    self.status_var.set(f"Added face: {self.pending_name}")
+                if self.selected_face_index is None:
+                    messagebox.showwarning(
+                        "No Selection",
+                        "Please click on a face to select it first."
+                    )
+                    return
+                
+                # Add only the selected face
+                success = False
+                name_to_add = self.pending_name
+                
+                # Get all face locations and encodings
+                face_locations, face_encodings = self.recognizer.detect_faces(self.current_frame)
+                
+                if self.selected_face_index < len(face_encodings):
+                    # Auto-generate name if not provided
+                    if not name_to_add:
+                        # Count existing unknown faces to generate the next number
+                        existing_names = self.recognizer.get_all_names()
+                        unknown_count = sum(1 for name in existing_names if name.startswith("unknown_"))
+                        name_to_add = f"unknown_{unknown_count + 1}"
+                    
+                    # Add the selected face encoding directly
+                    self.recognizer.known_face_encodings.append(face_encodings[self.selected_face_index])
+                    self.recognizer.known_face_names.append(name_to_add)
+                    self.recognizer.save_database()
+                    success = True
+                    
+                    if success:
+                        messagebox.showinfo("Success", f"Face added as '{name_to_add}'")
+                        self.update_faces_list()
+                        self.status_var.set(f"Added face: {name_to_add}")
                 else:
                     messagebox.showerror(
-                        "Error", 
-                        "Could not detect face. Ensure one face is clearly visible."
+                        "Error",
+                        "Selected face is no longer detected. Please try again."
                     )
                     self.status_var.set("Face capture failed")
             
             self.add_mode = False
             self.pending_name = None
+            self.selected_face_index = None
+            self.selected_face_location = None
             capture_window.destroy()
         
         def cancel():
             self.add_mode = False
             self.pending_name = None
+            self.selected_face_index = None
+            self.selected_face_location = None
             self.status_var.set("Capture cancelled")
             capture_window.destroy()
         

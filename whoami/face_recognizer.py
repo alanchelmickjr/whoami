@@ -27,9 +27,11 @@ class FaceRecognizer:
         self.known_face_names = []
         self.pipeline = None
         self.device = None
+        self._unknown_counter = 0  # Counter for automatic unknown face numbering
         
         # Load existing database if available
         self.load_database()
+        self._initialize_unknown_counter()
     
     def create_pipeline(self) -> dai.Pipeline:
         """
@@ -153,17 +155,24 @@ class FaceRecognizer:
         
         return results
     
-    def add_face(self, name: str, frame: np.ndarray) -> bool:
+    def add_face(self, name: Optional[str] = None, frame: Optional[np.ndarray] = None,
+                 face_index: int = 0) -> bool:
         """
         Add a new face to the database
         
         Args:
-            name: Name of the person
+            name: Name of the person (if None, auto-generates unknown_N)
             frame: Frame containing the face
+            face_index: Index of face to add when multiple faces detected (default: 0)
             
         Returns:
             True if successful, False otherwise
         """
+        # Auto-generate name if not provided
+        if name is None or name.strip() == "":
+            name = self._get_next_unknown_name()
+            print(f"Auto-generating name: {name}")
+        
         # Detect faces in the frame
         face_locations, face_encodings = self.detect_faces(frame)
         
@@ -172,17 +181,109 @@ class FaceRecognizer:
             return False
         
         if len(face_encodings) > 1:
-            print("Multiple faces detected. Please ensure only one face is in the frame")
-            return False
+            print(f"Multiple faces detected ({len(face_encodings)}). Using face at index {face_index}.")
+            if face_index >= len(face_encodings):
+                print(f"Face index {face_index} out of range (detected {len(face_encodings)} faces)")
+                return False
         
         # Add the face encoding and name
-        self.known_face_encodings.append(face_encodings[0])
+        self.known_face_encodings.append(face_encodings[face_index])
         self.known_face_names.append(name)
         
         # Save database
         self.save_database()
         
         return True
+    
+    def add_face_at_location(self, name: Optional[str] = None,
+                             frame: np.ndarray = None,
+                             face_location: Tuple[int, int, int, int] = None) -> bool:
+        """
+        Add a specific face at a given location to the database
+        
+        Args:
+            name: Name of the person (if None, auto-generates unknown_N)
+            frame: Frame containing the face
+            face_location: Location of face to add (top, right, bottom, left)
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        # Auto-generate name if not provided
+        if name is None or name.strip() == "":
+            name = self._get_next_unknown_name()
+            print(f"Auto-generating name: {name}")
+        
+        if frame is None or face_location is None:
+            print("Frame and face location are required")
+            return False
+        
+        # Detect all faces to find the matching one
+        face_locations, face_encodings = self.detect_faces(frame)
+        
+        if len(face_encodings) == 0:
+            print("No faces detected in frame")
+            return False
+        
+        # Find the face closest to the specified location
+        best_match_idx = None
+        min_distance = float('inf')
+        
+        for idx, location in enumerate(face_locations):
+            # Calculate distance between centers of bounding boxes
+            det_top, det_right, det_bottom, det_left = location
+            spec_top, spec_right, spec_bottom, spec_left = face_location
+            
+            det_center_x = (det_left + det_right) / 2
+            det_center_y = (det_top + det_bottom) / 2
+            spec_center_x = (spec_left + spec_right) / 2
+            spec_center_y = (spec_top + spec_bottom) / 2
+            
+            distance = ((det_center_x - spec_center_x) ** 2 +
+                       (det_center_y - spec_center_y) ** 2) ** 0.5
+            
+            if distance < min_distance:
+                min_distance = distance
+                best_match_idx = idx
+        
+        if best_match_idx is None:
+            print("Could not match face location")
+            return False
+        
+        # Use a reasonable threshold for matching (e.g., 50 pixels)
+        if min_distance > 50:
+            print(f"Face location match distance ({min_distance:.1f}) may be too far")
+        
+        # Add the matched face
+        self.known_face_encodings.append(face_encodings[best_match_idx])
+        self.known_face_names.append(name)
+        
+        # Save database
+        self.save_database()
+        print(f"Added face '{name}' at location {face_location}")
+        
+        return True
+    
+    def _get_next_unknown_name(self) -> str:
+        """Generate the next available unknown_N name"""
+        self._unknown_counter += 1
+        # Check if this number is already used
+        while f"unknown_{self._unknown_counter}" in self.known_face_names:
+            self._unknown_counter += 1
+        return f"unknown_{self._unknown_counter}"
+    
+    def _initialize_unknown_counter(self) -> None:
+        """Initialize the unknown counter based on existing unknown faces"""
+        # Find the highest unknown number in the database
+        max_num = 0
+        for name in self.known_face_names:
+            if name.startswith("unknown_"):
+                try:
+                    num = int(name.split("_")[1])
+                    max_num = max(max_num, num)
+                except (IndexError, ValueError):
+                    pass
+        self._unknown_counter = max_num
     
     def remove_face(self, name: str) -> bool:
         """
