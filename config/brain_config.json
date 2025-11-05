@@ -1,0 +1,361 @@
+{
+  "robot_id": "robot_baby_001",
+  "description": "Configuration for autonomous learning robot brain",
+  
+  "reasoning": {
+    "min_confidence": 0.3,
+    "hypothesis_threshold": 0.5,
+    "pattern_threshold": 3,
+    "object_completion": {
+      "enable_symmetry": true,
+      "enable_shape_prediction": true,
+      "min_points_for_completion": 10,
+      "max_completion_ratio": 5.0
+    },
+    "causal_reasoning": {
+      "min_observations": 2,
+      "temporal_window": 5.0,
+      "confidence_threshold": 0.6
+    },
+    "object_permanence": {
+      "decay_rate": 0.001,
+      "initial_score": 1.0,
+      "visibility_boost": 0.1
+    }
+  },
+  
+  "learning": {
+    "replay_buffer_size": 10000,
+    "curiosity_threshold": 0.5,
+    "learning_rate": 0.01,
+    "exploration_rate": 0.3,
+    "consolidation_interval": 100,
+    "experience_replay": {
+      "batch_size": 32,
+      "prioritization_enabled": true,
+      "importance_decay": 0.99,
+      "recency_weight": 0.8
+    },
+    "curiosity_settings": {
+      "initial_curiosity": 1.0,
+      "curiosity_decay": 0.99,
+      "experience_reduction": 0.8,
+      "novelty_bonus": 0.5
+    },
+    "mistake_detection": {
+      "negative_reward_threshold": -0.5,
+      "pattern_detection_window": 3600,
+      "min_repetitions": 2,
+      "exploration_reduction_factor": 0.9
+    },
+    "transfer_learning": {
+      "similarity_threshold": 0.7,
+      "transfer_discount": 0.7,
+      "max_transfer_examples": 10
+    },
+    "dream_mode": {
+      "duration_steps": 100,
+      "consolidation_frequency": 20,
+      "synthetic_experience_weight": 0.5
+    }
+  },
+  
+  "storage": {
+    "storage_dir": "./gun_storage",
+    "listen_port": 8765,
+    "broadcast_interval": 30,
+    "auto_share_family": true,
+    "auto_share_public": true,
+    "encryption_required": true,
+    "memory_categories": {
+      "private": {
+        "description": "Robot's personal secrets and uncertain decisions",
+        "encryption": "always",
+        "sharing": "never",
+        "retention_days": -1
+      },
+      "family": {
+        "description": "Shared with trusted sibling robots",
+        "encryption": "always",
+        "sharing": "trusted_only",
+        "min_trust_level": 3,
+        "retention_days": 30
+      },
+      "public": {
+        "description": "General knowledge shared with all",
+        "encryption": "optional",
+        "sharing": "all",
+        "retention_days": 7
+      }
+    },
+    "trust_levels": {
+      "none": {
+        "value": 0,
+        "description": "Unknown or untrusted robot",
+        "share_categories": []
+      },
+      "low": {
+        "value": 1,
+        "description": "Known but not trusted",
+        "share_categories": ["public"]
+      },
+      "medium": {
+        "value": 2,
+        "description": "Somewhat trusted",
+        "share_categories": ["public"]
+      },
+      "high": {
+        "value": 3,
+        "description": "Trusted robot",
+        "share_categories": ["public", "family"]
+      },
+      "sibling": {
+        "value": 4,
+        "description": "Full trust - sibling robot",
+        "share_categories": ["public", "family"]
+      }
+    },
+    "sync_settings": {
+      "max_sync_batch": 100,
+      "sync_timeout": 10,
+      "retry_attempts": 3,
+      "offline_queue_size": 1000
+    }
+  },
+  
+  "personality": {
+    "initial_traits": {
+      "cautious": 0.5,
+      "adventurous": 0.5,
+      "social": 0.5,
+      "solitary": 0.5,
+      "analytical": 0.5,
+      "creative": 0.5,
+      "patient": 0.5,
+      "impulsive": 0.5
+    },
+    "trait_variation": 0.1,
+    "development": {
+      "learning_influence": 0.05,
+      "success_boost": 0.05,
+      "failure_adjustment": -0.02,
+      "social_interaction_boost": 0.05,
+      "exploration_success_boost": 0.05,
+      "analytical_success_boost": 0.03,
+      "impulsive_success_boost": 0.02,
+      "patience_success_boost": 0.03
+    },
+    "stability": {
+      "max_trait_value": 0.9,
+      "min_trait_value": 0.1,
+      "normalization_rate": 0.01,
+      "variance_threshold": 0.5
+    }
+  },
+  
+  "emotions": {
+    "initial_state": "curious",
+    "transitions": {
+      "reward_based": {
+        "high_reward": {
+          "threshold": 0.7,
+          "emotion": "happy"
+        },
+        "medium_reward": {
+          "threshold": 0.3,
+          "emotion": "excited"
+        },
+        "negative_reward": {
+          "threshold": -0.5,
+          "emotion": "frustrated"
+        },
+        "small_negative": {
+          "threshold": -0.2,
+          "emotion": "confused"
+        }
+      },
+      "situation_based": {
+        "new_discovery": "curious",
+        "repetitive": "tired",
+        "threat_detected": "alert",
+        "social_success": "happy",
+        "problem_solved": "excited"
+      }
+    },
+    "influence_weights": {
+      "curious": 0.7,
+      "happy": 0.5,
+      "excited": 0.8,
+      "confused": 0.6,
+      "frustrated": 0.7,
+      "calm": 0.3,
+      "tired": 0.4,
+      "alert": 0.5
+    },
+    "history_size": 100
+  },
+  
+  "decision_making": {
+    "confidence_thresholds": {
+      "high": 0.7,
+      "medium": 0.4,
+      "low": 0.2
+    },
+    "memory_importance_threshold": 0.7,
+    "emotional_influence_threshold": 0.5,
+    "action_types": {
+      "observe": {
+        "base_confidence": 0.8,
+        "energy_cost": 0.1
+      },
+      "explore": {
+        "base_confidence": 0.5,
+        "energy_cost": 0.3,
+        "curiosity_multiplier": 1.5
+      },
+      "interact": {
+        "base_confidence": 0.6,
+        "energy_cost": 0.2,
+        "social_multiplier": 1.3
+      },
+      "examine": {
+        "base_confidence": 0.7,
+        "energy_cost": 0.2,
+        "analytical_multiplier": 1.4
+      },
+      "wait": {
+        "base_confidence": 0.9,
+        "energy_cost": 0.05,
+        "patience_multiplier": 1.2
+      },
+      "remember": {
+        "base_confidence": 0.8,
+        "energy_cost": 0.1
+      }
+    },
+    "personality_influence": {
+      "enabled": true,
+      "max_influence": 0.3,
+      "trait_threshold": 0.6
+    }
+  },
+  
+  "self_awareness": {
+    "assessment_interval": 10,
+    "assessment_probability": 0.1,
+    "stagnation_detection": {
+      "window_size": 20,
+      "min_unique_actions": 3,
+      "curiosity_boost": 1.1,
+      "exploration_boost": 1.1
+    },
+    "metrics": {
+      "track_age": true,
+      "track_experiences": true,
+      "track_knowledge": true,
+      "track_confidence": true,
+      "track_personality_stability": true
+    }
+  },
+  
+  "autonomous_operation": {
+    "enable_background_awareness": true,
+    "enable_periodic_dreams": true,
+    "dream_schedule": {
+      "interval_seconds": 3600,
+      "min_decisions_before_dream": 100,
+      "dream_duration": 50,
+      "tiredness_threshold": 100
+    },
+    "memory_formation": {
+      "auto_form_important": true,
+      "importance_threshold": 0.8,
+      "confidence_threshold": 0.7,
+      "emotional_threshold": 0.5
+    }
+  },
+  
+  "sibling_interaction": {
+    "enabled": true,
+    "learning_discount": 0.7,
+    "max_memories_per_sync": 10,
+    "trust_increase_per_interaction": 0.1,
+    "social_trait_boost": 0.05,
+    "knowledge_sharing": {
+      "share_successful_experiences": true,
+      "share_novel_discoveries": true,
+      "share_causal_relationships": true,
+      "withhold_failures_initially": true
+    }
+  },
+  
+  "vision_integration": {
+    "enabled": true,
+    "face_detection": {
+      "enabled": true,
+      "recognition_confidence_threshold": 0.7,
+      "remember_new_faces": true,
+      "social_interaction_trigger": 0.6
+    },
+    "object_detection": {
+      "enabled": true,
+      "3d_scanning": true,
+      "point_cloud_processing": true,
+      "object_completion": true,
+      "multi_view_fusion": true
+    }
+  },
+  
+  "resource_management": {
+    "memory_cache_size": 1000,
+    "decision_history_size": 1000,
+    "emotion_history_size": 100,
+    "max_active_hypotheses": 50,
+    "database_cleanup_interval": 86400,
+    "state_save_interval": 3600
+  },
+  
+  "development_stages": {
+    "infant": {
+      "age_range": [0, 3600],
+      "exploration_rate": 0.8,
+      "learning_rate": 0.05,
+      "curiosity_multiplier": 2.0
+    },
+    "toddler": {
+      "age_range": [3600, 86400],
+      "exploration_rate": 0.5,
+      "learning_rate": 0.03,
+      "curiosity_multiplier": 1.5
+    },
+    "child": {
+      "age_range": [86400, 604800],
+      "exploration_rate": 0.3,
+      "learning_rate": 0.01,
+      "curiosity_multiplier": 1.2
+    },
+    "adolescent": {
+      "age_range": [604800, 2592000],
+      "exploration_rate": 0.2,
+      "learning_rate": 0.005,
+      "curiosity_multiplier": 1.0
+    },
+    "adult": {
+      "age_range": [2592000, -1],
+      "exploration_rate": 0.1,
+      "learning_rate": 0.001,
+      "curiosity_multiplier": 0.8
+    }
+  },
+  
+  "logging": {
+    "level": "INFO",
+    "log_decisions": true,
+    "log_memories": true,
+    "log_emotions": true,
+    "log_learning": true,
+    "log_sync": true,
+    "max_log_size_mb": 100,
+    "log_rotation": true
+  }
+}

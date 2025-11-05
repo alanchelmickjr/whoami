@@ -1,0 +1,225 @@
+{
+  "gimbal": {
+    "description": "Configuration for Feetech servo-based gimbal control system",
+    
+    "servos": {
+      "pan": {
+        "id": 1,
+        "min_angle": -90,
+        "max_angle": 90,
+        "home_position": 0,
+        "max_speed": 500,
+        "acceleration": 100,
+        "inverted": false,
+        "description": "Horizontal rotation (left/right)"
+      },
+      "tilt": {
+        "id": 2,
+        "min_angle": -45,
+        "max_angle": 45,
+        "home_position": 0,
+        "max_speed": 400,
+        "acceleration": 100,
+        "inverted": false,
+        "description": "Vertical rotation (up/down)"
+      }
+    },
+    
+    "communication": {
+      "serial_port": "/dev/ttyUSB0",
+      "baudrate": 1000000,
+      "timeout": 0.05,
+      "description": "Serial communication settings for Feetech servos"
+    },
+    
+    "movement": {
+      "threshold": 1.0,
+      "smoothing_factor": 0.3,
+      "safety_check_interval": 0.1,
+      "enable_micro_movements": true,
+      "description": "Movement control parameters"
+    },
+    
+    "speed_profiles": {
+      "slow": {
+        "pan_speed": 200,
+        "tilt_speed": 150,
+        "description": "Careful, precise movements"
+      },
+      "normal": {
+        "pan_speed": 400,
+        "tilt_speed": 300,
+        "description": "Standard tracking speed"
+      },
+      "fast": {
+        "pan_speed": 800,
+        "tilt_speed": 600,
+        "description": "Quick reactions"
+      },
+      "smooth": {
+        "pan_speed": 300,
+        "tilt_speed": 200,
+        "description": "Extra smooth for scanning"
+      },
+      "natural": {
+        "pan_speed": 350,
+        "tilt_speed": 250,
+        "description": "Lifelike with micro-movements"
+      }
+    }
+  },
+  
+  "behaviors": {
+    "description": "Vision behavior configuration",
+    
+    "face_tracking": {
+      "center_threshold": 50.0,
+      "tracking_smoothing": 0.5,
+      "lost_timeout": 2.0,
+      "search_on_lost": true,
+      "description": "Face detection and tracking parameters"
+    },
+    
+    "object_scanning": {
+      "speed": "smooth",
+      "overlap": 0.2,
+      "pause_duration": 0.5,
+      "num_positions": 8,
+      "radius": 30.0,
+      "description": "3D object scanning parameters"
+    },
+    
+    "environmental_scanning": {
+      "pan_range": [-60, 60],
+      "tilt_range": [-30, 30],
+      "speed": "slow",
+      "pattern": "grid",
+      "grid_size": [5, 3],
+      "description": "Environmental exploration parameters"
+    },
+    
+    "search_patterns": {
+      "spiral_increment": 5.0,
+      "grid_size": [5, 3],
+      "timeout": 30.0,
+      "default_pattern": "spiral",
+      "description": "Search behavior when target is lost"
+    },
+    
+    "curiosity_mode": {
+      "enabled": true,
+      "min_interval": 3.0,
+      "max_interval": 10.0,
+      "movement_range": 30.0,
+      "micro_movement_probability": 0.01,
+      "description": "Random exploration when idle"
+    },
+    
+    "motion_following": {
+      "threshold": 20.0,
+      "tracking_speed": "fast",
+      "scale_factor": 0.1,
+      "description": "Motion detection and following"
+    }
+  },
+  
+  "camera_calibration": {
+    "description": "Camera field of view for coordinate conversion",
+    "horizontal_fov": 68.0,
+    "vertical_fov": 55.0,
+    "frame_width": 1280,
+    "frame_height": 720
+  },
+  
+  "presets": {
+    "description": "Predefined movement patterns and gestures",
+    
+    "greeting": {
+      "movements": [
+        {"pan": 0, "tilt": -10, "duration": 0.5},
+        {"pan": 0, "tilt": 5, "duration": 0.2},
+        {"pan": 0, "tilt": 0, "duration": 0.2}
+      ],
+      "description": "Nodding greeting gesture"
+    },
+    
+    "alert": {
+      "movements": [
+        {"pan": -20, "tilt": 0, "duration": 0.3},
+        {"pan": 20, "tilt": 0, "duration": 0.3},
+        {"pan": 0, "tilt": 0, "duration": 0.2}
+      ],
+      "description": "Quick left-right alert gesture"
+    },
+    
+    "inspection": {
+      "scan_angles": 6,
+      "scan_radius": 30,
+      "pause_at_position": 1.0,
+      "description": "Detailed object inspection routine"
+    },
+    
+    "yes": {
+      "movements": [
+        {"pan": 0, "tilt": -15, "duration": 0.3},
+        {"pan": 0, "tilt": 15, "duration": 0.3},
+        {"pan": 0, "tilt": -15, "duration": 0.3},
+        {"pan": 0, "tilt": 0, "duration": 0.2}
+      ],
+      "description": "Vertical nodding for yes"
+    },
+    
+    "no": {
+      "movements": [
+        {"pan": -20, "tilt": 0, "duration": 0.3},
+        {"pan": 20, "tilt": 0, "duration": 0.3},
+        {"pan": -20, "tilt": 0, "duration": 0.3},
+        {"pan": 0, "tilt": 0, "duration": 0.2}
+      ],
+      "description": "Horizontal shaking for no"
+    },
+    
+    "thinking": {
+      "movements": [
+        {"pan": -10, "tilt": 10, "duration": 1.0},
+        {"pan": 10, "tilt": 10, "duration": 1.0},
+        {"pan": 0, "tilt": 0, "duration": 0.5}
+      ],
+      "description": "Looking up and around while thinking"
+    }
+  },
+  
+  "safety": {
+    "description": "Safety and limit settings",
+    "emergency_stop_enabled": true,
+    "max_continuous_runtime": 3600,
+    "temperature_check_interval": 60,
+    "voltage_monitoring": true,
+    "auto_home_on_error": true,
+    "collision_detection": false
+  },
+  
+  "logging": {
+    "description": "Logging configuration",
+    "level": "INFO",
+    "log_movements": true,
+    "log_behaviors": true,
+    "log_errors": true,
+    "performance_monitoring": false
+  },
+  
+  "platform_specific": {
+    "jetson": {
+      "serial_port": "/dev/ttyTHS0",
+      "description": "Jetson-specific settings"
+    },
+    "raspberry_pi": {
+      "serial_port": "/dev/ttyAMA0",
+      "description": "Raspberry Pi-specific settings"
+    },
+    "desktop": {
+      "serial_port": "/dev/ttyUSB0",
+      "description": "Desktop/laptop settings"
+    }
+  }
+}
