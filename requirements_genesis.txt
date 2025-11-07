@@ -1,0 +1,132 @@
+# Genesis VLA Training System - Additional Requirements
+#
+# Install after base requirements.txt
+# These enable Genesis simulation and VLA training capabilities
+#
+# Installation:
+#   pip install -r requirements_genesis.txt
+
+# ============================================================================
+# Genesis Physics Simulation
+# ============================================================================
+
+# Genesis - Ultra-fast physics simulator for robotics
+genesis-world>=0.1.0
+
+# ============================================================================
+# Deep Learning Frameworks (if not already installed)
+# ============================================================================
+
+# PyTorch - For VLA model training
+torch>=2.0.0
+torchvision>=0.15.0
+
+# ============================================================================
+# Vision-Language Models
+# ============================================================================
+
+# Transformers - For language encoding (BERT, T5, etc.)
+transformers>=4.30.0
+
+# Tokenizers - Fast tokenization
+tokenizers>=0.13.0
+
+# Sentence Transformers - For semantic embeddings
+sentence-transformers>=2.2.0
+
+# CLIP - For vision-language alignment (optional)
+# clip @ git+https://github.com/openai/CLIP.git
+
+# ============================================================================
+# Policy Learning
+# ============================================================================
+
+# Diffusers - For diffusion policy implementation
+diffusers>=0.21.0
+
+# Stable Baselines3 - RL algorithms (optional)
+# stable-baselines3>=2.0.0
+
+# ============================================================================
+# Computer Vision (Additional)
+# ============================================================================
+
+# Kornia - Differentiable computer vision
+kornia>=0.7.0
+
+# Albumentations - Data augmentation
+albumentations>=1.3.0
+
+# ============================================================================
+# Utilities
+# ============================================================================
+
+# Weights & Biases - Experiment tracking (optional)
+# wandb>=0.15.0
+
+# TensorBoard - Training visualization
+tensorboard>=2.13.0
+
+# Hydra - Configuration management
+hydra-core>=1.3.0
+
+# OmegaConf - Configuration
+omegaconf>=2.3.0
+
+# ============================================================================
+# Data Processing
+# ============================================================================
+
+# H5PY - For large dataset storage
+h5py>=3.9.0
+
+# Zarr - Chunked array storage
+zarr>=2.16.0
+
+# ============================================================================
+# Optimization
+# ============================================================================
+
+# Accelerate - Distributed training
+accelerate>=0.20.0
+
+# DeepSpeed - Large model training (optional)
+# deepspeed>=0.10.0
+
+# ============================================================================
+# Development Tools (Optional)
+# ============================================================================
+
+# Jupyter - Interactive development
+# jupyter>=1.0.0
+# ipython>=8.14.0
+
+# Matplotlib - Visualization
+matplotlib>=3.7.0
+
+# Seaborn - Statistical plotting
+seaborn>=0.12.0
+
+# ============================================================================
+# Notes
+# ============================================================================
+
+# Genesis Installation:
+# - Requires CUDA 11.8+ (included in JetPack 5.1.2+)
+# - GPU memory: 4GB+ recommended
+# - For Jetson: May need to build from source for ARM64 optimization
+#
+# VLA Training:
+# - Full training requires 8GB+ GPU memory
+# - Can run inference on 4GB
+# - Consider model quantization for Jetson deployment
+#
+# Optional Components:
+# - Uncomment packages as needed for your workflow
+# - CLIP, wandb, stable-baselines3 are optional enhancements
+# - Jupyter/IPython for interactive development
+#
+# Performance:
+# - Use torch.compile() for faster inference (PyTorch 2.0+)
+# - Enable mixed precision training (FP16) on Jetson
+# - Consider model distillation for deployment
