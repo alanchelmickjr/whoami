@@ -1,0 +1,142 @@
+{
+  "description": "3DOF Coordinated Gimbal Configuration for Orbital 3D Scanning",
+  "version": "1.0",
+
+  "kinematics": {
+    "description": "Physical parameters of the gimbal kinematic chain",
+    "base_height": 0.10,
+    "arm_length": 0.15,
+    "camera_offset": 0.05,
+    "yaw_limits": [-180, 180],
+    "pitch_limits": [-90, 90],
+    "roll_limits": [-180, 180],
+    "directions": [1, 1, 1],
+    "zero_positions": [0, 0, 0],
+    "notes": {
+      "base_height": "Vertical distance from Servo 1 (base) to Servo 2 (shoulder) in meters",
+      "arm_length": "Horizontal distance from Servo 2 to Servo 3 (wrist) in meters",
+      "camera_offset": "Distance from Servo 3 to camera optical center in meters",
+      "limits": "Joint angle limits in degrees",
+      "directions": "Servo rotation directions: 1 = normal, -1 = inverted",
+      "zero_positions": "Calibration offsets in degrees"
+    }
+  },
+
+  "servo_ids": {
+    "description": "Feetech servo ID assignments",
+    "yaw": 1,
+    "pitch": 2,
+    "roll": 3,
+    "notes": {
+      "yaw": "Base rotation servo (rotates around vertical axis)",
+      "pitch": "Shoulder servo (swings arm up/down)",
+      "roll": "Wrist servo (rotates camera around optical axis)"
+    }
+  },
+
+  "serial": {
+    "description": "Serial communication settings for Feetech servos",
+    "port": "/dev/ttyUSB0",
+    "baudrate": 1000000,
+    "timeout": 0.05,
+    "notes": {
+      "port": "Serial port device (use /dev/ttyTHS0 for Jetson built-in UART)",
+      "baudrate": "1Mbps is standard for Feetech SCS/STS servos"
+    }
+  },
+
+  "motion": {
+    "description": "Movement and trajectory parameters",
+    "max_velocities": [60, 60, 120],
+    "acceleration": 100,
+    "interpolation_steps": 10,
+    "movement_threshold": 1.0,
+    "smoothing_factor": 0.3,
+    "notes": {
+      "max_velocities": "[yaw, pitch, roll] maximum speeds in degrees/second",
+      "acceleration": "Servo acceleration value (0-254)",
+      "interpolation_steps": "Number of steps between waypoints for smooth motion",
+      "movement_threshold": "Minimum angle change to trigger movement (degrees)",
+      "smoothing_factor": "Motion smoothing (0=none, 1=full)"
+    }
+  },
+
+  "scanning": {
+    "description": "Default parameters for 3D scanning operations",
+    "default_radius": 0.3,
+    "default_num_points": 36,
+    "default_roll_speed": 30,
+    "capture_delay": 0.2,
+    "scan_patterns": {
+      "quick": {
+        "orbital_positions": 12,
+        "description": "Fast scan with 12 positions (30° spacing)"
+      },
+      "standard": {
+        "orbital_positions": 36,
+        "description": "Standard scan with 36 positions (10° spacing)"
+      },
+      "detailed": {
+        "num_rings": 3,
+        "points_per_ring": 24,
+        "description": "Spherical scan with 3 elevation rings"
+      },
+      "ultra": {
+        "orbital_positions": 24,
+        "roll_angles": [0, 45, 90, 135],
+        "description": "Ultra-detailed with 4 roll angles at each position"
+      }
+    },
+    "notes": {
+      "default_radius": "Default orbital radius in meters",
+      "default_num_points": "Default number of scan positions around orbit",
+      "default_roll_speed": "Speed for continuous roll scanning (degrees/second)",
+      "capture_delay": "Delay after movement before capture (seconds)"
+    }
+  },
+
+  "workspace": {
+    "description": "Reachable workspace definition",
+    "min_reach": 0.05,
+    "max_reach": 0.30,
+    "safe_height_range": [-0.10, 0.20],
+    "notes": {
+      "min_reach": "Minimum distance camera can reach (meters)",
+      "max_reach": "Maximum distance camera can reach (meters)",
+      "safe_height_range": "Safe Z-axis range relative to base (meters)"
+    }
+  },
+
+  "safety": {
+    "description": "Safety and protection settings",
+    "enable_limits": true,
+    "enable_collision_avoidance": false,
+    "max_temperature": 70,
+    "min_voltage": 6.0,
+    "max_voltage": 8.4,
+    "emergency_stop_enabled": true,
+    "notes": {
+      "enable_limits": "Enforce joint angle limits",
+      "enable_collision_avoidance": "Check for collisions (requires collision model)",
+      "max_temperature": "Maximum servo temperature (°C)",
+      "voltage_range": "Safe operating voltage for servos"
+    }
+  },
+
+  "calibration": {
+    "description": "Calibration data and procedures",
+    "calibrated": false,
+    "calibration_date": null,
+    "test_positions": [
+      {"yaw": 0, "pitch": 0, "roll": 0},
+      {"yaw": 45, "pitch": 0, "roll": 0},
+      {"yaw": 0, "pitch": 45, "roll": 0},
+      {"yaw": 0, "pitch": 0, "roll": 90}
+    ],
+    "notes": {
+      "calibrated": "Set to true after running calibration",
+      "calibration_date": "ISO 8601 timestamp of last calibration",
+      "test_positions": "Joint angles to test during calibration"
+    }
+  }
+}
