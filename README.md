@@ -90,28 +90,35 @@ Production deployment platform - 22-DOF humanoid with RGBD vision:
 
 **➡️ See [K-1 Booster Setup Guide](docs/K1_BOOSTER_SETUP.md) for complete hardware configuration**
 
-### Robi - Custom Gimbal Vision System
+### Robi - Modular Morphing Platform
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │        Robi (Reasonably Obtainable Bot Intelligence)    │
-│              Jetson Orin NX on Carrier Board            │
+│         Modular Platform - Swappable Base System        │
 ├─────────────────────────────────────────────────────────┤
-│  👁️  OAK-D Series 3 Camera                              │
-│     • Stereo depth + RGB vision                        │
-│     • On-device neural inference                       │
-│     • 4K video with depth mapping                      │
+│  🧠 Core Module (Always Present)                         │
+│     • Jetson Orin NX brain                             │
+│     • OAK-D Series 3 camera head                       │
+│     • Gimbal system (head/neck tilt)                   │
+│     • Basic arms for manipulation                      │
+│     • Wheels for mobility                              │
 ├─────────────────────────────────────────────────────────┤
-│  🎮 Gimbal Control System                               │
+│  👁️  Vision Head                                         │
+│     • OAK-D: Stereo depth + RGB                        │
 │     • Head: /dev/ttyTHS1 (tilt) - Feetech servo        │
 │     • Neck: /dev/ttyTHS2 (tilt) - Feetech servo        │
-│     • Coordinated 2-axis tracking                      │
-│     • Smooth pursuit and scanning                      │
+│     • 2-axis coordinated tracking                      │
 ├─────────────────────────────────────────────────────────┤
 │  🎤 Audio I/O                                            │
 │     • USB Audio Class 2.0 interface                    │
 │     • TTS voice output                                 │
 │     • Voice interaction & name asking                  │
+├─────────────────────────────────────────────────────────┤
+│  🔧 Morphing Base System (Swappable)                     │
+│     • Different bases for different tasks              │
+│     • Tool attachments and configurations              │
+│     • Currently building: New base                     │
 ├─────────────────────────────────────────────────────────┤
 │  🧠 WhoAmI Intelligence Layer                           │
 │     • YOLO + DeepFace face recognition                 │
@@ -121,7 +128,9 @@ Production deployment platform - 22-DOF humanoid with RGBD vision:
 └─────────────────────────────────────────────────────────┘
 ```
 
-**➡️ Both platforms use the same WhoAmI intelligence software**
+**➡️ Robi: Modular platform with persistent head/brain and swappable bases**
+**➡️ K-1: Commercial integrated humanoid with fixed body structure**
+**➡️ Both use the same WhoAmI intelligence software**
 
 ## Core Features (Platform-Portable)
 
@@ -424,20 +433,27 @@ if (result.recognized) {
 - Button and gamepad input
 - TF transforms (ROS2 compatible)
 
-### Robi - Reasonably Obtainable Bot Intelligence (Custom Build)
+### Robi - Reasonably Obtainable Bot Intelligence (Modular Platform)
 
-**Platform**: Jetson Orin NX on carrier board
-
-**Vision System**
+**Core Module (Persistent)**
+- **Brain**: Jetson Orin NX on carrier board
 - **Camera**: OAK-D Series 3 (depth + RGB stereo)
-- **Gimbal**: 2-3 axis Feetech STS/SCS servos
-- **Control**: Serial ports /dev/ttyTHS1-2
-- **Features**: Head and neck tilt for tracking
-
-**Other Peripherals**
+- **Gimbal**: 2-3 axis Feetech STS/SCS servos (/dev/ttyTHS1-2)
+- **Arms**: Basic manipulators (always present)
+- **Wheels**: Base mobility system (always present)
 - **Audio**: USB Audio Class 2.0
 - **Network**: Ethernet or WiFi
-- **Software**: WhoAmI face recognition + voice interaction
+
+**Morphing Base System**
+- **Concept**: Swappable bases and tool attachments for different tasks
+- **Core stays constant**: Head, brain, vision, arms, wheels
+- **Base adapts**: Different configurations for different missions
+- **Currently**: Building new base configuration
+
+**Software**
+- WhoAmI intelligence layer (face recognition + voice)
+- Same software stack as K-1 Booster
+- Hardware-backed encryption for identity storage
 
 ## Documentation
 
