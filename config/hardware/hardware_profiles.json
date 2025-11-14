@@ -1,0 +1,327 @@
+{
+  "schema_version": "1.0",
+  "description": "Hardware profile definitions for WhoAmI system",
+  "documentation": "See docs/HARDWARE_CONFIG_GUIDE.md for details",
+
+  "profiles": {
+    "jetson_orin_nano_devkit": {
+      "display_name": "Jetson Orin Nano Developer Kit",
+      "module": "orin_nano",
+      "carrier": "devkit",
+      "detection": {
+        "device_tree_model": "NVIDIA Orin Nano Developer Kit",
+        "compatible": ["nvidia,p3768-0000+p3767-0000"]
+      },
+      "peripherals": {
+        "serial": {
+          "primary": "/dev/ttyTHS0",
+          "available": ["/dev/ttyTHS0", "/dev/ttyTHS1"],
+          "notes": "Built-in UART on 40-pin header"
+        },
+        "gpio": {
+          "chip": "gpiochip0",
+          "pins": 40
+        },
+        "i2c": {
+          "buses": [0, 1, 7, 8],
+          "notes": "I2C-0 and I2C-1 on 40-pin header"
+        },
+        "usb": {
+          "ports": 4,
+          "usb3_ports": 4
+        }
+      },
+      "performance": {
+        "cpu_cores": 6,
+        "gpu_sm_count": 512,
+        "max_power_mode": "MAXN",
+        "memory_gb": 8
+      }
+    },
+
+    "jetson_orin_nx_devkit": {
+      "display_name": "Jetson Orin NX Developer Kit",
+      "module": "orin_nx",
+      "carrier": "devkit",
+      "detection": {
+        "device_tree_model": "NVIDIA Orin NX Developer Kit",
+        "compatible": ["nvidia,p3509-0000+p3767-0000"]
+      },
+      "peripherals": {
+        "serial": {
+          "primary": "/dev/ttyTHS0",
+          "available": ["/dev/ttyTHS0", "/dev/ttyTHS1"],
+          "notes": "UART on 40-pin header"
+        },
+        "gpio": {
+          "chip": "gpiochip0",
+          "pins": 40
+        },
+        "i2c": {
+          "buses": [0, 1, 7, 8],
+          "notes": "Standard I2C buses on header"
+        },
+        "usb": {
+          "ports": 4,
+          "usb3_ports": 4
+        }
+      },
+      "performance": {
+        "cpu_cores": 8,
+        "gpu_sm_count": 1024,
+        "max_power_mode": "MAXN",
+        "memory_gb": 16
+      }
+    },
+
+    "jetson_orin_nx_k1": {
+      "display_name": "Jetson Orin NX on K-1 Booster",
+      "module": "orin_nx",
+      "carrier": "k1_booster",
+      "detection": {
+        "device_tree_model": "NVIDIA Orin NX",
+        "compatible": ["nvidia,p3509-0000+p3767-0000"],
+        "carrier_detection": {
+          "method": "gpio_probe",
+          "description": "Detect K-1 carrier via GPIO 194",
+          "gpio_pin": 194,
+          "expected_value": 1
+        }
+      },
+      "peripherals": {
+        "serial": {
+          "primary": "/dev/ttyTHS1",
+          "head_neck_gimbal": "/dev/ttyTHS2",
+          "available": ["/dev/ttyTHS0", "/dev/ttyTHS1", "/dev/ttyTHS2"],
+          "notes": "K-1 exposes additional UART ports. ttyTHS1 for pan/tilt, ttyTHS2 for head/neck gimbal."
+        },
+        "gpio": {
+          "chip": "gpiochip1",
+          "pins": 40,
+          "notes": "K-1 uses different GPIO chip mapping"
+        },
+        "i2c": {
+          "buses": [0, 2, 8],
+          "notes": "K-1 booster provides I2C on different bus numbers"
+        },
+        "usb": {
+          "ports": 6,
+          "usb3_ports": 4,
+          "notes": "K-1 booster adds 2 additional USB 2.0 ports"
+        },
+        "audio": {
+          "input_device": "hw:2,0",
+          "output_device": "hw:2,0",
+          "sample_rate": 48000,
+          "channels": 2,
+          "supported_features": ["voice_reporting", "audio_tracking", "speech_synthesis", "voice_commands"],
+          "notes": "Audio input/output for operator reporting and environmental tracking. USB audio recommended."
+        },
+        "display": {
+          "remote_access": {
+            "vnc_enabled": true,
+            "vnc_port": 5900,
+            "direct_hdmi": true,
+            "resolution": "1920x1080"
+          },
+          "notes": "Operator can VNC in or connect directly to NX"
+        },
+        "network": {
+          "ethernet_ports": 2,
+          "ethernet_primary": "eth0",
+          "ethernet_secondary": "eth1",
+          "wifi_module": "optional",
+          "notes": "Dual Ethernet for redundancy and remote operation"
+        },
+        "additional": {
+          "m2_slots": 2,
+          "pcie_lanes": 4,
+          "description": "K-1 booster provides expanded I/O capabilities"
+        }
+      },
+      "gimbal_system": {
+        "type": "head_neck_dual",
+        "total_axes": 3,
+        "head_gimbal": {
+          "serial_port": "/dev/ttyTHS1",
+          "axes": ["pan", "tilt"],
+          "description": "Head pan/tilt gimbal (eye/camera movement)"
+        },
+        "neck_gimbal": {
+          "serial_port": "/dev/ttyTHS2",
+          "axes": ["neck_tilt"],
+          "description": "Neck tilt gimbal (nod forward/back)"
+        },
+        "notes": "K-1 uses 2-axis head gimbal + 1-axis neck tilt (total 3 axes)"
+      },
+      "performance": {
+        "cpu_cores": 8,
+        "gpu_sm_count": 1024,
+        "max_power_mode": "MAXN",
+        "memory_gb": 16
+      },
+      "operational_modes": {
+        "remote_vnc": {
+          "enabled": true,
+          "description": "Operator VNC access for remote control",
+          "audio_streaming": true
+        },
+        "direct_access": {
+          "enabled": true,
+          "description": "Direct HDMI/keyboard/mouse access to NX"
+        },
+        "autonomous": {
+          "enabled": true,
+          "description": "Fully autonomous operation with audio reporting",
+          "audio_feedback": true
+        }
+      },
+      "setup_notes": "K-1 booster requires head/neck gimbal configuration, audio system setup, and VNC server installation. Ensure proper power supply (19V, 65W minimum). Configure audio devices and test remote access before deployment."
+    },
+
+    "jetson_agx_orin_devkit": {
+      "display_name": "Jetson AGX Orin Developer Kit",
+      "module": "agx_orin",
+      "carrier": "devkit",
+      "detection": {
+        "device_tree_model": "NVIDIA AGX Orin Developer Kit",
+        "compatible": ["nvidia,p3737-0000+p3701-0000"]
+      },
+      "peripherals": {
+        "serial": {
+          "primary": "/dev/ttyTHS0",
+          "available": ["/dev/ttyTHS0", "/dev/ttyTHS1", "/dev/ttyTHS2", "/dev/ttyTHS3"],
+          "notes": "Multiple UART ports available"
+        },
+        "gpio": {
+          "chip": "gpiochip0",
+          "pins": 40
+        },
+        "i2c": {
+          "buses": [0, 1, 2, 7, 8, 9],
+          "notes": "Extensive I2C bus availability"
+        },
+        "usb": {
+          "ports": 8,
+          "usb3_ports": 6
+        }
+      },
+      "performance": {
+        "cpu_cores": 12,
+        "gpu_sm_count": 2048,
+        "max_power_mode": "MAXN",
+        "memory_gb": 64
+      }
+    },
+
+    "desktop_linux": {
+      "display_name": "Desktop Linux (x86_64)",
+      "module": "generic",
+      "carrier": "desktop",
+      "detection": {
+        "platform": "linux",
+        "architecture": "x86_64"
+      },
+      "peripherals": {
+        "serial": {
+          "primary": "/dev/ttyUSB0",
+          "available": ["/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyACM0"],
+          "notes": "USB serial adapters typically used"
+        },
+        "gpio": {
+          "chip": null,
+          "notes": "GPIO not typically available on desktop systems"
+        },
+        "i2c": {
+          "buses": [],
+          "notes": "I2C may be available via USB adapters"
+        },
+        "usb": {
+          "ports": "varies",
+          "usb3_ports": "varies"
+        }
+      },
+      "performance": {
+        "description": "Performance varies by hardware"
+      }
+    },
+
+    "raspberry_pi_4": {
+      "display_name": "Raspberry Pi 4 Model B",
+      "module": "bcm2711",
+      "carrier": "rpi4",
+      "detection": {
+        "device_tree_model": "Raspberry Pi 4",
+        "compatible": ["raspberrypi,4-model-b"]
+      },
+      "peripherals": {
+        "serial": {
+          "primary": "/dev/ttyAMA0",
+          "available": ["/dev/ttyAMA0", "/dev/serial0"],
+          "notes": "Primary UART on GPIO pins 14/15"
+        },
+        "gpio": {
+          "chip": "gpiochip0",
+          "pins": 40
+        },
+        "i2c": {
+          "buses": [0, 1],
+          "notes": "I2C-1 on GPIO pins 2/3"
+        },
+        "usb": {
+          "ports": 4,
+          "usb3_ports": 2
+        }
+      },
+      "performance": {
+        "cpu_cores": 4,
+        "memory_gb": "varies (2/4/8)"
+      }
+    },
+
+    "mac_m_series": {
+      "display_name": "Apple Silicon Mac (M1/M2/M3/M4)",
+      "module": "apple_silicon",
+      "carrier": "mac",
+      "detection": {
+        "platform": "darwin",
+        "architecture": "arm64"
+      },
+      "peripherals": {
+        "serial": {
+          "primary": "/dev/cu.usbserial-0",
+          "available": ["/dev/cu.usbserial*", "/dev/cu.usbmodem*"],
+          "notes": "USB serial adapters, device names vary"
+        },
+        "gpio": {
+          "chip": null,
+          "notes": "No GPIO on Mac"
+        },
+        "i2c": {
+          "buses": [],
+          "notes": "I2C via USB adapters only"
+        },
+        "usb": {
+          "ports": "varies",
+          "usb3_ports": "varies",
+          "notes": "Thunderbolt/USB-C ports"
+        }
+      },
+      "performance": {
+        "description": "High performance for development and testing"
+      }
+    }
+  },
+
+  "fallback_profile": "desktop_linux",
+
+  "detection_priority": [
+    "jetson_orin_nx_k1",
+    "jetson_orin_nx_devkit",
+    "jetson_orin_nano_devkit",
+    "jetson_agx_orin_devkit",
+    "raspberry_pi_4",
+    "mac_m_series",
+    "desktop_linux"
+  ]
+}

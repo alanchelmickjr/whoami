@@ -1,0 +1,269 @@
+{
+  "description": "K-1 Booster Configuration for Jetson Orin NX with Head/Neck Gimbal and Audio",
+  "hardware_profile": "jetson_orin_nx_k1",
+
+  "gimbal": {
+    "description": "Dual gimbal system configuration for K-1",
+
+    "head_gimbal": {
+      "description": "Head pan/tilt gimbal for camera/eye movement",
+      "communication": {
+        "serial_port": "/dev/ttyTHS1",
+        "baudrate": 1000000,
+        "timeout": 0.05
+      },
+      "servos": {
+        "pan": {
+          "id": 1,
+          "min_angle": -90,
+          "max_angle": 90,
+          "home_position": 0,
+          "max_speed": 500,
+          "acceleration": 100,
+          "inverted": false,
+          "description": "Head horizontal rotation (left/right)"
+        },
+        "tilt": {
+          "id": 2,
+          "min_angle": -45,
+          "max_angle": 45,
+          "home_position": 0,
+          "max_speed": 400,
+          "acceleration": 100,
+          "inverted": false,
+          "description": "Head vertical rotation (up/down)"
+        }
+      },
+      "movement": {
+        "threshold": 1.0,
+        "smoothing_factor": 0.3,
+        "safety_check_interval": 0.1,
+        "enable_micro_movements": true
+      }
+    },
+
+    "neck_gimbal": {
+      "description": "Neck tilt gimbal for forward/back nodding",
+      "communication": {
+        "serial_port": "/dev/ttyTHS2",
+        "baudrate": 1000000,
+        "timeout": 0.05
+      },
+      "servos": {
+        "neck_tilt": {
+          "id": 3,
+          "min_angle": -45,
+          "max_angle": 45,
+          "home_position": 0,
+          "max_speed": 250,
+          "acceleration": 80,
+          "inverted": false,
+          "description": "Neck tilt (nod head forward/back)"
+        }
+      },
+      "movement": {
+        "threshold": 1.5,
+        "smoothing_factor": 0.4,
+        "safety_check_interval": 0.1,
+        "enable_micro_movements": true,
+        "description": "Slower, more deliberate movements for neck"
+      }
+    },
+
+    "coordination": {
+      "description": "Coordinated head and neck movement",
+      "combined_movements_enabled": true,
+      "head_neck_ratio": 0.6,
+      "notes": "When tracking, head moves 60% and neck compensates 40%"
+    }
+  },
+
+  "audio": {
+    "description": "Audio system configuration for K-1",
+
+    "input": {
+      "device": "hw:2,0",
+      "sample_rate": 48000,
+      "channels": 2,
+      "format": "S16_LE",
+      "chunk_size": 1024,
+      "description": "Microphone input for audio tracking and voice commands"
+    },
+
+    "output": {
+      "device": "hw:2,0",
+      "sample_rate": 48000,
+      "channels": 2,
+      "format": "S16_LE",
+      "description": "Speaker output for voice reporting and feedback"
+    },
+
+    "features": {
+      "voice_reporting": {
+        "enabled": true,
+        "engine": "pyttsx3",
+        "voice": "english",
+        "rate": 150,
+        "volume": 0.8,
+        "description": "Text-to-speech for status reporting"
+      },
+
+      "audio_tracking": {
+        "enabled": true,
+        "source_localization": true,
+        "tracking_threshold": 0.3,
+        "integration_with_gimbal": true,
+        "description": "Track and orient toward audio sources"
+      },
+
+      "speech_recognition": {
+        "enabled": true,
+        "engine": "vosk",
+        "model_path": "/opt/whoami/models/vosk-model-small-en-us-0.15",
+        "confidence_threshold": 0.7,
+        "description": "Voice command recognition"
+      },
+
+      "environmental_monitoring": {
+        "enabled": true,
+        "noise_threshold": 0.5,
+        "alert_on_loud_sounds": true,
+        "description": "Monitor environmental audio"
+      }
+    },
+
+    "reporting": {
+      "startup_greeting": true,
+      "status_updates": true,
+      "error_announcements": true,
+      "face_detection_announcements": false,
+      "tracking_announcements": false,
+      "periodic_status_interval": 300,
+      "description": "Audio reporting configuration"
+    }
+  },
+
+  "remote_access": {
+    "description": "Remote access configuration for operator control",
+
+    "vnc": {
+      "enabled": true,
+      "port": 5900,
+      "display": ":0",
+      "geometry": "1920x1080",
+      "depth": 24,
+      "password_required": true,
+      "description": "VNC server for remote desktop access"
+    },
+
+    "ssh": {
+      "enabled": true,
+      "port": 22,
+      "key_only": true,
+      "description": "SSH access for command line"
+    },
+
+    "web_interface": {
+      "enabled": true,
+      "port": 8080,
+      "ssl_enabled": false,
+      "description": "Web-based control interface"
+    },
+
+    "audio_streaming": {
+      "enabled": true,
+      "bidirectional": true,
+      "codec": "opus",
+      "bitrate": 64000,
+      "description": "Two-way audio streaming for remote operator"
+    }
+  },
+
+  "network": {
+    "description": "Network configuration for K-1",
+
+    "ethernet": {
+      "primary_interface": "eth0",
+      "secondary_interface": "eth1",
+      "failover_enabled": true,
+      "failover_timeout": 5,
+      "description": "Dual Ethernet with automatic failover"
+    },
+
+    "wifi": {
+      "enabled": false,
+      "interface": "wlan0",
+      "description": "WiFi backup (if module installed)"
+    }
+  },
+
+  "behaviors": {
+    "description": "Behavioral configuration for K-1",
+
+    "face_tracking": {
+      "center_threshold": 50.0,
+      "tracking_smoothing": 0.5,
+      "lost_timeout": 2.0,
+      "search_on_lost": true,
+      "use_neck_for_large_movements": true,
+      "head_neck_threshold": 30.0,
+      "audio_announcement": false
+    },
+
+    "audio_source_tracking": {
+      "enabled": true,
+      "priority": "high",
+      "combine_with_face_tracking": true,
+      "orient_to_speaker": true,
+      "announcement_on_detection": false
+    },
+
+    "idle_behavior": {
+      "curiosity_mode_enabled": true,
+      "min_interval": 5.0,
+      "max_interval": 15.0,
+      "movement_range": 20.0,
+      "use_neck_movements": true,
+      "audio_idle_sounds": false
+    }
+  },
+
+  "camera": {
+    "description": "OAK-D S3 camera configuration",
+    "preview_width": 1280,
+    "preview_height": 720,
+    "fps": 30,
+    "auto_exposure": true,
+    "auto_white_balance": true
+  },
+
+  "safety": {
+    "description": "Safety configuration",
+    "emergency_stop_enabled": true,
+    "max_continuous_runtime": 7200,
+    "temperature_check_interval": 60,
+    "voltage_monitoring": true,
+    "auto_home_on_error": true,
+    "collision_detection": false,
+    "head_neck_coordination_check": true
+  },
+
+  "logging": {
+    "description": "Logging configuration",
+    "level": "INFO",
+    "log_movements": true,
+    "log_behaviors": true,
+    "log_errors": true,
+    "log_audio_events": true,
+    "log_network_events": true,
+    "performance_monitoring": true,
+    "log_file": "/var/log/whoami/k1_booster.log"
+  },
+
+  "operational_mode": {
+    "description": "Current operational mode",
+    "mode": "remote_vnc",
+    "options": ["autonomous", "remote_vnc", "direct_access"],
+    "notes": "Set to remote_vnc for operator control, autonomous for independent operation"
+  }
+}
