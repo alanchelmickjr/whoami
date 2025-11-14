@@ -122,6 +122,11 @@ def main():
         default=10,
         help='FPS limit for processing (default: 10)'
     )
+    parser.add_argument(
+        '--wave',
+        action='store_true',
+        help='Wave when greeting known people'
+    )
     args = parser.parse_args()
 
     # Parse resolution
@@ -158,7 +163,9 @@ def main():
     logger.info("\n" + "=" * 60)
     logger.info("System ready!")
     logger.info("- Unknown faces will be asked for their names")
-    logger.info("- Known faces will be greeted")
+    logger.info("- Known faces will be greeted with time since last seen")
+    if args.wave:
+        logger.info("- Robot will wave when greeting people")
     logger.info("- Press 'q' to quit")
     logger.info("- Press 'a' to manually add a face")
     logger.info("- Press 's' to show statistics")
@@ -186,7 +193,8 @@ def main():
             results = system.process_frame(
                 frame=frame,
                 ask_unknown=not args.no_voice,
-                greet_known=not args.no_voice
+                greet_known=not args.no_voice,
+                wave_on_greet=args.wave
             )
 
             # Draw results if display enabled
