@@ -50,7 +50,54 @@ except ImportError:
     VOICE_AVAILABLE = False
     logging.warning("Voice interaction not available")
 
+# Import K-1 arm control
+try:
+    from whoami.k1_arm_controller import K1ArmController, ArmSide
+    ARM_CONTROL_AVAILABLE = True
+except ImportError:
+    ARM_CONTROL_AVAILABLE = False
+    logging.warning("K-1 arm control not available")
+
 logger = logging.getLogger(__name__)
+
+
+def format_time_delta(seconds: float) -> str:
+    """
+    Format time difference in human-friendly format
+
+    Args:
+        seconds: Time difference in seconds
+
+    Returns:
+        Formatted string like "1 day 3 hours and 23 seconds"
+    """
+    if seconds < 0:
+        return "just now"
+
+    days = int(seconds // 86400)
+    hours = int((seconds % 86400) // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+
+    parts = []
+    if days > 0:
+        parts.append(f"{days} day{'s' if days != 1 else ''}")
+    if hours > 0:
+        parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+    if minutes > 0 and days == 0:  # Skip minutes if we have days
+        parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+    if secs > 0 and days == 0 and hours == 0:  # Only show seconds if < 1 hour
+        parts.append(f"{secs} second{'s' if secs != 1 else ''}")
+
+    if not parts:
+        return "just now"
+
+    if len(parts) == 1:
+        return parts[0]
+    elif len(parts) == 2:
+        return f"{parts[0]} and {parts[1]}"
+    else:
+        return f"{', '.join(parts[:-1])}, and {parts[-1]}"
 
 
 @dataclass
@@ -187,6 +234,7 @@ class DeepFaceRecognizer:
 
         # Face database
         self.face_db: Dict[str, List[np.ndarray]] = {}
+        self.metadata_db: Dict[str, Dict[str, Any]] = {}  # Store metadata like last_seen
         self._lock = threading.RLock()
 
         # Load existing database
@@ -243,6 +291,12 @@ class DeepFaceRecognizer:
             try:
                 if name not in self.face_db:
                     self.face_db[name] = []
+                    # Initialize metadata for new person
+                    self.metadata_db[name] = {
+                        'first_seen': time.time(),
+                        'last_seen': time.time(),
+                        'encounter_count': 0
+                    }
 
                 self.face_db[name].append(embedding)
                 self.save_database()
@@ -309,10 +363,41 @@ class DeepFaceRecognizer:
         with self._lock:
             if name in self.face_db:
                 del self.face_db[name]
+                if name in self.metadata_db:
+                    del self.metadata_db[name]
                 self.save_database()
                 logger.info(f"Removed all faces for {name}")
                 return True
             return False
+
+    def update_last_seen(self, name: str) -> None:
+        """Update the last_seen timestamp for a person"""
+        with self._lock:
+            if name not in self.metadata_db:
+                self.metadata_db[name] = {
+                    'first_seen': time.time(),
+                    'last_seen': time.time(),
+                    'encounter_count': 0
+                }
+
+            self.metadata_db[name]['last_seen'] = time.time()
+            self.metadata_db[name]['encounter_count'] = self.metadata_db[name].get('encounter_count', 0) + 1
+            self.save_database()
+
+    def get_time_since_last_seen(self, name: str) -> Optional[float]:
+        """
+        Get time in seconds since person was last seen
+
+        Args:
+            name: Person's name
+
+        Returns:
+            Seconds since last seen, or None if never seen
+        """
+        with self._lock:
+            if name in self.metadata_db and 'last_seen' in self.metadata_db[name]:
+                return time.time() - self.metadata_db[name]['last_seen']
+            return None
 
     def get_all_names(self) -> List[str]:
         """Get all known names"""
@@ -323,8 +408,13 @@ class DeepFaceRecognizer:
         """Save face database to disk"""
         with self._lock:
             try:
+                data = {
+                    'face_db': self.face_db,
+                    'metadata_db': self.metadata_db,
+                    'version': '2.0'
+                }
                 with open(self.database_path, 'wb') as f:
-                    pickle.dump(self.face_db, f)
+                    pickle.dump(data, f)
                 logger.debug(f"Saved database with {len(self.face_db)} people")
                 return True
             except Exception as e:
@@ -340,7 +430,18 @@ class DeepFaceRecognizer:
         with self._lock:
             try:
                 with open(self.database_path, 'rb') as f:
-                    self.face_db = pickle.load(f)
+                    data = pickle.load(f)
+
+                # Handle both old and new database formats
+                if isinstance(data, dict) and 'version' in data:
+                    # New format with metadata
+                    self.face_db = data.get('face_db', {})
+                    self.metadata_db = data.get('metadata_db', {})
+                else:
+                    # Old format - just face embeddings
+                    self.face_db = data
+                    self.metadata_db = {}
+
                 logger.info(f"Loaded database with {len(self.face_db)} people")
                 return True
             except Exception as e:
@@ -432,7 +533,8 @@ class K1FaceRecognitionSystem:
         yolo_model: str = 'yolov8n.pt',
         deepface_model: str = 'Facenet',
         enable_voice: bool = True,
-        camera_resolution: Tuple[int, int] = (1280, 720)
+        camera_resolution: Tuple[int, int] = (1280, 720),
+        enable_arm_control: bool = True
     ):
         """
         Initialize K-1 face recognition system
@@ -442,6 +544,7 @@ class K1FaceRecognitionSystem:
             deepface_model: DeepFace model name
             enable_voice: Enable voice interaction
             camera_resolution: Camera resolution
+            enable_arm_control: Enable arm control for gestures
         """
         # Initialize components
         self.detector = YOLOFaceDetector(model_path=yolo_model)
@@ -452,6 +555,12 @@ class K1FaceRecognitionSystem:
         if enable_voice and VOICE_AVAILABLE:
             self.voice = VoiceInteraction()
             logger.info("Voice interaction enabled")
+
+        # Arm control
+        self.arm_controller = None
+        if enable_arm_control and ARM_CONTROL_AVAILABLE:
+            self.arm_controller = K1ArmController()
+            logger.info("Arm control enabled")
 
         # Camera
         self.camera = OakDCameraYOLO(resolution=camera_resolution)
@@ -464,6 +573,11 @@ class K1FaceRecognitionSystem:
 
     def start(self) -> bool:
         """Start the system"""
+        # Start arm controller if available
+        if self.arm_controller:
+            if not self.arm_controller.start():
+                logger.warning("Failed to start arm controller")
+
         return self.camera.start()
 
     def stop(self) -> None:
@@ -471,11 +585,16 @@ class K1FaceRecognitionSystem:
         self.camera.stop()
         self.recognizer.save_database()
 
+        # Stop arm controller if available
+        if self.arm_controller:
+            self.arm_controller.stop()
+
     def process_frame(
         self,
         frame: Optional[np.ndarray] = None,
         ask_unknown: bool = True,
-        greet_known: bool = True
+        greet_known: bool = True,
+        wave_on_greet: bool = False
     ) -> List[FaceRecognitionResult]:
         """
         Process a frame for face recognition with voice interaction
@@ -484,6 +603,7 @@ class K1FaceRecognitionSystem:
             frame: Input frame (if None, gets from camera)
             ask_unknown: Ask unknown people for their names
             greet_known: Greet known people
+            wave_on_greet: Wave after greeting known people
 
         Returns:
             List of recognition results
@@ -533,8 +653,26 @@ class K1FaceRecognitionSystem:
             elif name != "Unknown" and greet_known and self.voice:
                 last_greet = self.recently_greeted.get(name, 0)
                 if current_time - last_greet > self.greet_cooldown:
-                    self.voice.welcome_back(name)
+                    # Get time since last seen
+                    time_since = self.recognizer.get_time_since_last_seen(name)
+
+                    if time_since is not None and time_since > 60:  # More than 1 minute
+                        # Create personalized greeting with time
+                        time_str = format_time_delta(time_since)
+                        greeting = f"Hi {name}, it's been {time_str} since we last talked! How are you?"
+                        self.voice.say(greeting)
+                    else:
+                        # First time seeing them or saw them very recently
+                        self.voice.welcome_back(name)
+
+                    # Wave if requested
+                    if wave_on_greet:
+                        self.wave()
+
                     self.recently_greeted[name] = current_time
+
+                # Update last_seen timestamp
+                self.recognizer.update_last_seen(name)
 
             # Create result
             result = FaceRecognitionResult(
@@ -640,14 +778,44 @@ class K1FaceRecognitionSystem:
         # Add to database
         return self.recognizer.add_face(name, embedding)
 
+    def wave(self) -> None:
+        """
+        Perform a friendly wave gesture using the robot's arm
+
+        Uses the K-1's ROS2 arm control to wave with the right arm.
+        The gesture raises the arm to shoulder height, rotates the wrist
+        several times, and returns to rest position.
+        """
+        if not self.arm_controller:
+            logger.warning("Wave requested but arm control not available")
+            return
+
+        logger.info("Waving with right arm!")
+        # Execute wave gesture using ROS2 arm controller
+        # The K1ArmController.wave() handles the full gesture sequence
+        self.arm_controller.wave(ArmSide.RIGHT)
+
     def get_statistics(self) -> Dict[str, Any]:
         """Get system statistics"""
-        return {
-            'known_people': len(self.recognizer.get_all_names()),
-            'people': self.recognizer.get_all_names(),
+        names = self.recognizer.get_all_names()
+        stats = {
+            'known_people': len(names),
+            'people': names,
             'voice_enabled': self.voice is not None,
+            'arm_control_enabled': self.arm_controller is not None,
             'camera_running': self.camera.is_running()
         }
+
+        # Add metadata for each person
+        for name in names:
+            if name in self.recognizer.metadata_db:
+                metadata = self.recognizer.metadata_db[name]
+                time_since = self.recognizer.get_time_since_last_seen(name)
+                if time_since is not None:
+                    stats[f'{name}_last_seen'] = format_time_delta(time_since)
+                    stats[f'{name}_encounters'] = metadata.get('encounter_count', 0)
+
+        return stats
 
 
 def main():
