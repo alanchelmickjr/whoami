@@ -50,6 +50,14 @@ except ImportError:
     VOICE_AVAILABLE = False
     logging.warning("Voice interaction not available")
 
+# Import K-1 arm control
+try:
+    from whoami.k1_arm_controller import K1ArmController, ArmSide
+    ARM_CONTROL_AVAILABLE = True
+except ImportError:
+    ARM_CONTROL_AVAILABLE = False
+    logging.warning("K-1 arm control not available")
+
 logger = logging.getLogger(__name__)
 
 
@@ -525,7 +533,8 @@ class K1FaceRecognitionSystem:
         yolo_model: str = 'yolov8n.pt',
         deepface_model: str = 'Facenet',
         enable_voice: bool = True,
-        camera_resolution: Tuple[int, int] = (1280, 720)
+        camera_resolution: Tuple[int, int] = (1280, 720),
+        enable_arm_control: bool = True
     ):
         """
         Initialize K-1 face recognition system
@@ -535,6 +544,7 @@ class K1FaceRecognitionSystem:
             deepface_model: DeepFace model name
             enable_voice: Enable voice interaction
             camera_resolution: Camera resolution
+            enable_arm_control: Enable arm control for gestures
         """
         # Initialize components
         self.detector = YOLOFaceDetector(model_path=yolo_model)
@@ -545,6 +555,12 @@ class K1FaceRecognitionSystem:
         if enable_voice and VOICE_AVAILABLE:
             self.voice = VoiceInteraction()
             logger.info("Voice interaction enabled")
+
+        # Arm control
+        self.arm_controller = None
+        if enable_arm_control and ARM_CONTROL_AVAILABLE:
+            self.arm_controller = K1ArmController()
+            logger.info("Arm control enabled")
 
         # Camera
         self.camera = OakDCameraYOLO(resolution=camera_resolution)
@@ -557,12 +573,21 @@ class K1FaceRecognitionSystem:
 
     def start(self) -> bool:
         """Start the system"""
+        # Start arm controller if available
+        if self.arm_controller:
+            if not self.arm_controller.start():
+                logger.warning("Failed to start arm controller")
+
         return self.camera.start()
 
     def stop(self) -> None:
         """Stop the system"""
         self.camera.stop()
         self.recognizer.save_database()
+
+        # Stop arm controller if available
+        if self.arm_controller:
+            self.arm_controller.stop()
 
     def process_frame(
         self,
@@ -757,17 +782,18 @@ class K1FaceRecognitionSystem:
         """
         Perform a friendly wave gesture using the robot's arm
 
-        Currently a placeholder - will control arm when implemented
+        Uses the K-1's ROS2 arm control to wave with the right arm.
+        The gesture raises the arm to shoulder height, rotates the wrist
+        several times, and returns to rest position.
         """
-        logger.info("Waving!")
-        # TODO: Implement arm wave motion
-        # The K-1 robots have arms, so this should control the arm to wave
-        # Example wave sequence:
-        #   - Raise arm to shoulder height
-        #   - Rotate wrist left-right-left-right (3-4 times)
-        #   - Lower arm back to rest position
-        # May also combine with head nod for more personality
-        pass
+        if not self.arm_controller:
+            logger.warning("Wave requested but arm control not available")
+            return
+
+        logger.info("Waving with right arm!")
+        # Execute wave gesture using ROS2 arm controller
+        # The K1ArmController.wave() handles the full gesture sequence
+        self.arm_controller.wave(ArmSide.RIGHT)
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get system statistics"""
@@ -776,6 +802,7 @@ class K1FaceRecognitionSystem:
             'known_people': len(names),
             'people': names,
             'voice_enabled': self.voice is not None,
+            'arm_control_enabled': self.arm_controller is not None,
             'camera_running': self.camera.is_running()
         }
 

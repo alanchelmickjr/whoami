@@ -86,6 +86,50 @@ fi
 # Install DeepFace
 pip3 install deepface
 
+# Install ROS2 for arm control (Jetson only)
+echo ""
+echo "Installing ROS2 for arm control..."
+if [ "$IS_JETSON" = true ]; then
+    echo "Setting up ROS2 Humble for K-1 arm control..."
+
+    # Check if ROS2 is already installed
+    if ! command -v ros2 &> /dev/null; then
+        echo "Installing ROS2 Humble..."
+
+        # Add ROS2 repository
+        sudo apt install -y software-properties-common
+        sudo add-apt-repository universe
+        sudo apt update && sudo apt install -y curl
+
+        sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+
+        sudo apt update
+        sudo apt install -y \
+            ros-humble-ros-base \
+            ros-humble-sensor-msgs \
+            ros-humble-trajectory-msgs \
+            python3-colcon-common-extensions
+
+        # Source ROS2 setup in bashrc
+        if ! grep -q "source /opt/ros/humble/setup.bash" ~/.bashrc; then
+            echo 'source /opt/ros/humble/setup.bash' >> ~/.bashrc
+        fi
+
+        echo "✓ ROS2 Humble installed"
+    else
+        echo "✓ ROS2 already installed"
+
+        # Make sure required message packages are installed
+        sudo apt install -y \
+            ros-humble-sensor-msgs \
+            ros-humble-trajectory-msgs
+    fi
+else
+    echo "⚠ ROS2 installation skipped (not on Jetson)"
+    echo "  Arm control will run in simulation mode"
+fi
+
 # Download YOLO model
 echo ""
 echo "Downloading YOLOv8 nano model..."
@@ -172,9 +216,22 @@ echo "========================================="
 echo "K-1 Setup Complete!"
 echo "========================================="
 echo ""
+echo "Installed Features:"
+echo "  ✓ YOLO face detection (YOLOv8)"
+echo "  ✓ DeepFace recognition"
+echo "  ✓ Voice interaction (TTS + STT)"
+echo "  ✓ Arm control (ROS2 integration)"
+echo "  ✓ Time-tracked greetings"
+echo ""
 echo "Next steps:"
 echo "  1. Reload your shell: source ~/.bashrc"
-echo "  2. Test the system: python3 examples/k1_yolo_demo.py"
+echo "  2. Test face recognition: python3 examples/k1_yolo_demo.py"
+echo "  3. Add --wave flag to test arm gestures"
+echo ""
+echo "Example commands:"
+echo "  python3 examples/k1_yolo_demo.py              # Full demo"
+echo "  python3 examples/k1_yolo_demo.py --wave       # With wave gesture"
+echo "  python3 examples/k1_yolo_demo.py --no-voice   # Silent mode"
 echo ""
 echo "For K-1 Booster documentation, see:"
 echo "  - docs/K1_BOOSTER_SETUP.md"
