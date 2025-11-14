@@ -1,0 +1,18 @@
+{
+  "modelsPath": "./models",
+  "dataPath": "./data/gun",
+  "minConfidence": 0.7,
+  "descriptorThreshold": 0.6,
+  "peers": [],
+  "camera": {
+    "deviceId": 0,
+    "width": 640,
+    "height": 480,
+    "fps": 30
+  },
+  "security": {
+    "enableHardwareBinding": true,
+    "enableDoubleEncryption": true,
+    "description": "All encryption keys are derived from device-specific hardware identifiers. This ensures that data can only be decrypted on the original device and cannot be reverse engineered."
+  }
+}

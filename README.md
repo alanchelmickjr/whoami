@@ -1,17 +1,18 @@
 # WhoAmI - Facial Recognition System
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Node.js 18+](https://img.shields.io/badge/node.js-18+-green.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Oak D](https://img.shields.io/badge/Oak%20D-Series%203-green.svg)](https://docs.luxonis.com/)
 
-A simple, portable, and modular facial recognition framework designed for Oak D Series 3 cameras and Jetson Orin Nano. Built with security and ease of use in mind.
+A comprehensive, secure facial recognition framework designed for robotics platforms. Features both Python (Oak D cameras) and JavaScript (Gun.js secure database) implementations with hardware-backed encryption.
 
 ## Features
 
 ### Core Recognition
 - 🎥 **Oak D Series 3 Support**: Optimized for Oak D cameras using DepthAI SDK
 - 👤 **Face Management**: Add, remove, and manage known faces
-- 🔌 **New Class-Based API**: Clean, modular, and thread-safe face recognition library
+- 🔌 **Class-Based API**: Clean, modular, and thread-safe face recognition library
 - 📊 **Batch Processing**: Process multiple images and videos efficiently
 - 🔔 **Event Callbacks**: React to face detection and recognition events
 - 🧵 **Thread-Safe**: Designed for multi-threaded applications
@@ -24,24 +25,31 @@ A simple, portable, and modular facial recognition framework designed for Oak D 
 - 🔊 **Text-to-Speech**: Provide audio feedback and status updates
 
 ### Hardware & Integration
-- 🔒 **Secure**: Local processing, no cloud dependencies
+- 🔒 **Secure**: Local processing, hardware-backed encryption, no cloud dependencies
 - 🚀 **Portable**: Lightweight and modular design for easy integration
 - 🤖 **Robot-Ready**: Perfect for robotics applications on Jetson platforms
 - 🎛️ **Hardware Auto-Detection**: Automatic platform detection and configuration
 - 🎮 **Gimbal Control**: 3-axis gimbal support for head/neck movement
 - 🌐 **Remote Access**: VNC, SSH, and web interface support
-- 🔌 **Multi-Platform**: Jetson, Raspberry Pi, Mac, and Linux desktop
+- 🔌 **Multi-Platform**: Jetson (including K-1 Booster), Raspberry Pi, Mac, and Linux desktop
+
+### Security (Gun.js Implementation)
+- 🔐 **Hardware-Backed Encryption**: Keys derived from device-specific hardware identifiers
+- 🔒 **Double-Layer Encryption**: AES-256-GCM + Gun.js SEA encryption
+- 🛡️ **Zero Plaintext Storage**: No encryption keys or sensitive data in code
+- 🎯 **Device-Specific**: Each robot has unique cryptographic identity
+- ⚙️ **Reverse Engineering Resistant**: Data cannot be decrypted without specific hardware
 
 ## Hardware Requirements
 
 ### Supported Platforms
 
-The WhoAmI system now includes automatic hardware detection and configuration for multiple platforms:
+The WhoAmI system includes automatic hardware detection and configuration for multiple platforms:
 
 - **NVIDIA Jetson**
   - Jetson Orin Nano DevKit
   - Jetson Orin NX DevKit
-  - Jetson Orin NX on K-1 Booster (3-axis gimbal + audio)
+  - **Jetson Orin NX on K-1 Booster** (3-axis gimbal + audio + dual Ethernet)
   - Jetson AGX Orin DevKit
 - **Raspberry Pi 4**
 - **Apple Silicon Mac** (M1/M2/M3/M4)
@@ -49,9 +57,16 @@ The WhoAmI system now includes automatic hardware detection and configuration fo
 
 ### Core Requirements
 
+**Python Implementation:**
 - Oak D Series 3 camera (or compatible DepthAI device)
 - USB 3.0 port
 - Python 3.8 or higher
+
+**JavaScript Implementation:**
+- Node.js >= 18.0.0
+- USB Camera or CSI Camera
+- OpenCV (for opencv4nodejs)
+- CUDA support (for GPU acceleration)
 
 ### K-1 Booster Configuration
 
@@ -66,18 +81,34 @@ See [K-1 Booster Setup Guide](docs/K1_BOOSTER_SETUP.md) for detailed configurati
 
 ## Installation
 
-### Quick Install
+### Python Implementation (Quick Install)
 
 ```bash
 # Clone the repository
 git clone https://github.com/alanchelmickjr/whoami.git
 cd whoami
 
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 
 # Or install as a package
 pip install -e .
+```
+
+### JavaScript Implementation
+
+```bash
+# Install Node.js dependencies
+npm install
+
+# Download face-api.js models
+mkdir -p models
+cd models
+# Download models from https://github.com/vladmandic/face-api
+# Required models:
+# - ssdMobilenetv1
+# - faceLandmark68Net
+# - faceRecognitionNet
 ```
 
 ### System Dependencies
@@ -85,10 +116,13 @@ pip install -e .
 For Jetson Orin Nano:
 ```bash
 sudo apt-get update
-sudo apt-get install -y python3-pip python3-tk cmake libopencv-dev
+sudo apt-get install -y python3-pip python3-tk cmake libopencv-dev nodejs npm
+
+# For voice interaction
+sudo apt-get install -y portaudio19-dev espeak flac alsa-utils pulseaudio
 ```
 
-For face_recognition library dependencies:
+For face_recognition library:
 ```bash
 sudo apt-get install -y build-essential cmake libopenblas-dev liblapack-dev libx11-dev libgtk-3-dev
 ```
@@ -128,33 +162,6 @@ export WHOAMI_SERIAL_PORT="/dev/ttyTHS1"
 python -m whoami.gui
 ```
 
-### Hardware Profiles
-
-All hardware configurations are defined in `config/hardware/hardware_profiles.json`:
-
-```bash
-# View detected hardware info
-python -m whoami.hardware_detector
-
-# Output includes:
-# - Hardware name and type
-# - Serial ports and peripherals
-# - Gimbal configuration (if applicable)
-# - Audio devices (if applicable)
-# - Remote access settings
-```
-
-### Adding New Hardware
-
-To add support for new hardware configurations:
-
-1. Add profile to `config/hardware/hardware_profiles.json`
-2. Define detection criteria (device tree model, GPIO pins, etc.)
-3. Specify peripherals (serial, GPIO, I2C, audio, etc.)
-4. Test detection and verify configuration
-
-See [Hardware Configuration Guide](docs/HARDWARE_CONFIG_GUIDE.md) for detailed instructions.
-
 ### K-1 Booster Testing
 
 Multiple K-1 booster units are available for testing! The configuration includes:
@@ -180,7 +187,7 @@ Multiple K-1 booster units are available for testing! The configuration includes
 
 ## Usage
 
-### GUI Application
+### Python GUI Application
 
 Start the graphical interface:
 
@@ -197,7 +204,7 @@ whoami-gui
 4. **Clear All Faces**: Remove all stored faces
 5. **Real-time Recognition**: Automatically recognize faces in the camera feed
 
-### CLI Application
+### Python CLI Application
 
 Use the command-line interface:
 
@@ -218,23 +225,23 @@ python run_cli.py recognize
 python run_cli.py clear
 ```
 
-### 🆕 Face Recognition API (Refactored)
+### Python Face Recognition API
 
-The new Face Recognition API provides a clean, class-based interface with improved modularity and features:
+The Face Recognition API provides a clean, class-based interface:
 
 ```python
 from whoami.face_recognition_api import create_face_recognition_api
 
-# Quick start with the new API
+# Quick start with the API
 api = create_face_recognition_api()
 
 # Start camera and process frames
 with api:
     api.start_camera()
-    
+
     # Add a face to database
     api.add_face("John Doe")
-    
+
     # Real-time recognition
     while True:
         results = api.process_frame()
@@ -242,216 +249,107 @@ with api:
             print(f"Recognized: {result.name} ({result.confidence:.2f})")
 ```
 
-**Key Features of the New API:**
-- **Separated Concerns**: Camera, detection, recognition, and database are separate components
-- **Event-Driven**: Register callbacks for face detection, recognition, and other events
-- **Thread-Safe**: Built-in support for multi-threaded applications
-- **Flexible Configuration**: Extensive configuration options via `RecognitionConfig`
-- **Multiple Camera Types**: Support for OAK-D and webcam with easy extensibility
-- **Batch Processing**: Efficiently process directories of images or video files
-- **Context Manager Support**: Automatic resource cleanup
+### Voice Interaction
 
-See the comprehensive [API Reference](docs/API_REFERENCE.md) and [Usage Guide](docs/USAGE_GUIDE.md) for detailed documentation.
+Ask people for their names and greet them:
+
+```python
+from whoami.voice_interaction import VoiceInteraction
+
+# Initialize voice system
+voice = VoiceInteraction()
+
+# Ask for a name
+name = voice.ask_name()
+if name:
+    voice.greet_person(name)
+    print(f"Learned name: {name}")
+```
+
+### JavaScript Gun.js Implementation
+
+Secure facial recognition with hardware-backed encryption:
+
+```javascript
+import { whoami } from './src/index.js';
+
+// Initialize the system
+await whoami.initialize('./config/config.json');
+
+// Register a person
+const image = await loadImage('path/to/person.jpg');
+const faceId = await whoami.registerPerson(image, 'John Doe');
+
+// Recognize a person
+const result = await whoami.recognize(image);
+if (result.recognized) {
+  console.log(`Hello, ${result.personName}!`);
+}
+
+// List registered persons
+const persons = await whoami.listRegistered();
+console.log(persons);
+```
 
 ## Architecture
 
-The system is designed with modularity in mind:
+### Python Implementation
 
 ```
 whoami/
 ├── whoami/
 │   ├── __init__.py                  # Package initialization
-│   ├── face_recognizer.py           # Original core face recognition logic
-│   ├── face_recognition_api.py      # 🆕 New refactored API
+│   ├── face_recognizer.py           # Core face recognition logic
+│   ├── face_recognition_api.py      # Class-based API
+│   ├── voice_interaction.py         # Voice interaction system
+│   ├── hardware_detector.py         # Hardware auto-detection
 │   ├── gui.py                       # GUI application
 │   ├── cli.py                       # CLI application
 │   └── config.py                    # Configuration management
-├── docs/
-│   ├── API_REFERENCE.md             # 🆕 Complete API documentation
-│   └── USAGE_GUIDE.md               # 🆕 Usage guide with examples
-├── examples/
-│   ├── api_basic_usage.py          # 🆕 Basic API usage examples
-│   ├── api_advanced_features.py    # 🆕 Advanced features demo
-│   ├── api_robotics_integration.py # 🆕 Robotics integration examples
-│   └── api_batch_processing.py     # 🆕 Batch processing examples
-├── run_gui.py                      # GUI entry point
-├── run_cli.py                      # CLI entry point
-├── requirements.txt                 # Python dependencies
-└── setup.py                        # Installation script
+├── config/
+│   ├── hardware/                    # Hardware profiles
+│   │   ├── hardware_profiles.json  # Platform configurations
+│   │   └── README.md
+│   └── k1_booster_config.json      # K-1 specific config
+├── docs/                            # Comprehensive documentation
+├── examples/                        # Example scripts
+└── requirements.txt                 # Python dependencies
 ```
 
-### Core Components
+### JavaScript Implementation with Gun.js
 
-1. **FaceRecognizer** (`face_recognizer.py`): Core facial recognition engine
-   - Camera interface via DepthAI
-   - Face detection and encoding
-   - Face database management
-   - Recognition with confidence scores
-
-2. **GUI** (`gui.py`): Tkinter-based graphical interface
-   - Live camera feed display
-   - Face management controls
-   - Visual feedback for recognition
-
-3. **CLI** (`cli.py`): Command-line interface
-   - Headless operation support
-   - Scriptable face management
-   - Real-time recognition mode
-
-4. **Config** (`config.py`): Configuration system
-   - Camera settings
-   - Recognition parameters
-   - GUI preferences
-
-## Integration
-
-This framework is designed to be easily integrated into larger robotics systems. You can use either the original API or the new refactored API:
-
-### Using the New Face Recognition API (Recommended)
-
-```python
-from whoami.face_recognition_api import (
-    FaceRecognitionAPI,
-    RecognitionConfig,
-    CameraType,
-    RecognitionModel
-)
-
-# Configure the API
-config = RecognitionConfig(
-    camera_type=CameraType.OAK_D,
-    tolerance=0.5,
-    model=RecognitionModel.HOG,  # or CNN for higher accuracy
-    process_every_n_frames=2,     # Skip frames for performance
-    database_path="my_faces.pkl"
-)
-
-# Initialize API
-api = FaceRecognitionAPI(config)
-
-# Use as context manager for automatic cleanup
-with api:
-    api.start_camera()
-    
-    # Add faces to database
-    api.add_face("John Doe")
-    
-    # Process frames
-    while True:
-        results = api.process_frame()
-        for result in results:
-            if result.name != "Unknown":
-                print(f"Recognized: {result.name} ({result.confidence:.2f})")
-                print(f"Location: {result.location}")
-
-# Or use event callbacks
-def on_face_recognized(results):
-    for result in results:
-        print(f"Event: Recognized {result.name}")
-
-api.register_callback('on_face_recognized', on_face_recognized)
+```
+┌─────────────────────────────────────────────────────────┐
+│                    WhoAmI System                        │
+├─────────────────────────────────────────────────────────┤
+│  Application Layer                                      │
+│  - Facial Recognition (face-api.js)                    │
+│  - Real-time Processing                                │
+├─────────────────────────────────────────────────────────┤
+│  Security Layer (Hardware-Backed)                       │
+│  - AES-256-GCM Encryption                              │
+│  - Hardware Key Derivation (CPU Serial + MAC)          │
+│  - Scrypt Key Derivation Function                      │
+├─────────────────────────────────────────────────────────┤
+│  Database Layer (Gun.js)                                │
+│  - SEA Encryption (Second Layer)                        │
+│  - Decentralized P2P Database                          │
+│  - Local-First Storage                                 │
+├─────────────────────────────────────────────────────────┤
+│  Hardware Layer (Jetson Nano)                           │
+│  - GPU Acceleration for CV                              │
+│  - Hardware Identifiers                                │
+│  - Camera Interface                                     │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### Using the Original API
-
-```python
-from whoami.face_recognizer import FaceRecognizer
-
-# Initialize recognizer
-recognizer = FaceRecognizer(database_path="my_faces.pkl")
-
-# Start camera
-recognizer.start_camera()
-
-# Get frame and recognize
-frame = recognizer.get_frame()
-face_locations, face_encodings = recognizer.detect_faces(frame)
-results = recognizer.recognize_faces(face_encodings)
-
-# results contains [(name, confidence), ...]
-for (name, confidence) in results:
-    print(f"Detected: {name} (confidence: {confidence:.2f})")
-
-# Stop camera
-recognizer.stop_camera()
+**JavaScript Structure:**
 ```
-
-## Configuration
-
-Create a `config.json` file to customize settings:
-
-```json
-{
-    "camera": {
-        "preview_width": 640,
-        "preview_height": 480,
-        "fps": 30
-    },
-    "recognition": {
-        "tolerance": 0.6,
-        "database_path": "face_database.pkl"
-    },
-    "gui": {
-        "window_width": 1000,
-        "window_height": 700,
-        "video_width": 640,
-        "video_height": 480
-    }
-}
-```
-
-## Security Features
-
-- **Local Processing**: All face recognition happens on-device
-- **No Cloud**: No internet connection required
-- **Encrypted Storage**: Face encodings stored in binary format
-- **Privacy First**: No images stored, only mathematical encodings
-
-## Performance Tips
-
-For Jetson Orin Nano:
-- Enable maximum performance mode: `sudo nvpmodel -m 0`
-- Set CPU to max frequency: `sudo jetson_clocks`
-- Consider using CUDA acceleration for face_recognition library
-
-## Troubleshooting
-
-### Camera Not Detected
-```bash
-# Check if Oak D is connected
-lsusb | grep Movidius
-
-# Verify DepthAI installation
-python -c "import depthai; print(depthai.__version__)"
-```
-
-### Performance Issues
-- Reduce camera resolution in config
-- Lower FPS setting
-- Ensure adequate lighting for better detection
-
-### Import Errors
-```bash
-# Reinstall dependencies
-pip install --upgrade -r requirements.txt
-```
-
-## Development
-
-To contribute or extend the framework:
-
-```bash
-# Install in development mode
-pip install -e .
-
-# Run tests (if available)
-python -m pytest tests/
-
-# Run example scripts
-python examples/api_basic_usage.py
-python examples/api_advanced_features.py
-python examples/api_robotics_integration.py
-python examples/api_batch_processing.py
+src/
+├── index.js              # Main application entry point
+├── secureKeyManager.js   # Hardware-backed key management
+├── secureDatabase.js     # Gun.js database with encryption
+└── facialRecognition.js  # Face detection and recognition
 ```
 
 ## 📚 Documentation
@@ -470,44 +368,89 @@ python examples/api_batch_processing.py
 - **[Spatial Awareness Guide](docs/SPATIAL_AWARENESS_GUIDE.md)**: Environmental understanding
 - **[Servo Safety Guide](docs/SERVO_SAFETY_GUIDE.md)**: Servo health monitoring and safety
 
+### Security & Deployment
+- **[Security Documentation](SECURITY.md)**: Hardware-backed encryption details
+- **[Deployment Guide](DEPLOYMENT.md)**: Production deployment instructions
+- **[API Documentation](API.md)**: JavaScript API reference
+
 ### Installation & Setup
 - **[Installation Guide](INSTALLATION.md)**: Complete installation instructions
 - **[Setup Quick Reference](SETUP_QUICK_REFERENCE.md)**: Quick setup commands
 - **[Jetson & M4 Setup](SETUP_JETSON_M4.md)**: Platform-specific setup guide
 
-### Example Scripts
+## Configuration
 
-1. **[api_basic_usage.py](examples/api_basic_usage.py)**: Basic face recognition operations
-   - Starting/stopping camera
-   - Adding faces to database
-   - Real-time recognition
-   - Database management
+### Python Configuration
 
-2. **[api_advanced_features.py](examples/api_advanced_features.py)**: Advanced capabilities
-   - Event callbacks
-   - Multi-threaded processing
-   - Adaptive recognition
-   - Facial landmarks analysis
+Create a `config.json` file to customize settings:
 
-3. **[api_robotics_integration.py](examples/api_robotics_integration.py)**: Robotics applications
-   - Person tracking
-   - State management
-   - Security robot implementation
-   - Interactive robot behaviors
+```json
+{
+    "camera": {
+        "preview_width": 640,
+        "preview_height": 480,
+        "fps": 30
+    },
+    "recognition": {
+        "tolerance": 0.6,
+        "database_path": "face_database.pkl"
+    },
+    "gui": {
+        "window_width": 1000,
+        "window_height": 700
+    }
+}
+```
 
-4. **[api_batch_processing.py](examples/api_batch_processing.py)**: Batch operations
-   - Process directories of images
-   - Video file processing
-   - Export results to CSV/JSON
-   - Dataset analysis
+### JavaScript Configuration
 
-## License
+Edit `config/config.json`:
 
-See LICENSE file for details.
+```json
+{
+  "modelsPath": "./models",
+  "dataPath": "./data/gun",
+  "minConfidence": 0.7,
+  "descriptorThreshold": 0.6,
+  "peers": [],
+  "camera": {
+    "deviceId": 0,
+    "width": 640,
+    "height": 480,
+    "fps": 30
+  }
+}
+```
 
-## Support
+## Security Features
 
-For issues and questions, please open an issue on GitHub.
+### Hardware-Backed Encryption (Gun.js)
+
+1. **Key Derivation**:
+   - Reads CPU serial from `/proc/cpuinfo`
+   - Reads MAC address from network interfaces
+   - Combines and hashes to create unique hardware fingerprint
+   - Uses scrypt (memory-hard KDF) to derive encryption keys
+
+2. **Double Encryption**:
+   ```
+   Plain Data → Hardware Encryption → Gun.js SEA Encryption → Storage
+   ```
+
+3. **Tamper Detection**:
+   - Uses GCM authentication tags
+   - Any tampering causes decryption to fail
+   - No silent data corruption possible
+
+### Why This is Secure
+
+- **No Key Extraction**: Keys derived from hardware on-the-fly, never stored
+- **Device-Locked**: Data encrypted on one device cannot be decrypted on another
+- **Memory-Hard KDF**: Resistant to brute force attacks using scrypt
+- **Layered Defense**: Even if one encryption layer is broken, second layer protects data
+- **P2P Security**: Gun.js provides additional SEA (Security, Encryption, Authorization)
+- **Local Processing**: All face recognition happens on-device (Python implementation)
+- **Privacy First**: No images stored, only mathematical encodings
 
 ## Roadmap
 
@@ -522,9 +465,10 @@ For issues and questions, please open an issue on GitHub.
 - [x] ~~K-1 Booster support with 3-axis gimbal~~
 - [x] ~~Audio I/O configuration~~
 - [x] ~~Multi-platform hardware detection~~
+- [x] ~~Voice interaction system~~
+- [x] ~~Gun.js secure database integration~~
 
 ### In Progress 🚧
-- [ ] **Voice interaction system** - Ask names and identify people via audio
 - [ ] **Audio source tracking** - Orient gimbal toward speakers
 - [ ] **Voice commands** - Control system via speech
 
@@ -539,11 +483,28 @@ For issues and questions, please open an issue on GitHub.
 - [ ] Emotion detection
 - [ ] Multi-language voice support
 - [ ] Voice biometrics for speaker identification
+- [ ] Distributed Gun.js peer network
 
 ## Credits
 
 Built with:
 - [DepthAI](https://github.com/luxonis/depthai-python) - Oak D camera interface
 - [face_recognition](https://github.com/ageitgey/face_recognition) - Face recognition library
+- [Gun.js](https://gun.eco/) - Decentralized database
+- [face-api.js](https://github.com/vladmandic/face-api) - JavaScript face recognition
 - [OpenCV](https://opencv.org/) - Computer vision operations
 - [tkinter](https://docs.python.org/3/library/tkinter.html) - GUI framework
+- [pyttsx3](https://pyttsx3.readthedocs.io/) - Text-to-speech
+- [Vosk](https://alphacephei.com/vosk/) - Offline speech recognition
+
+## License
+
+See LICENSE file for details.
+
+## Support
+
+For issues and questions, please open an issue on GitHub.
+
+## ⚠️ Disclaimer
+
+This system is designed for authorized use only. Ensure compliance with local privacy laws and regulations when deploying facial recognition technology.
