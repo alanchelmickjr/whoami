@@ -1,21 +1,40 @@
 """
 K-1 Booster Arm Controller
 
-ROS2-based arm control for the K-1 humanoid robot.
-The K-1 has 4-DOF arms (shoulder pitch/roll, elbow, wrist) with force-controlled
-dual-encoder joints.
+⚠️ IMPORTANT: This is a SIMPLIFIED interface for K-1 arm gestures.
+For production use with real K-1 hardware, use the official Booster Robotics SDK:
+https://github.com/BoosterRobotics/booster_robotics_sdk
+
+This module provides basic gesture commands (wave, point) as a demonstration
+of how to integrate arm control with face recognition. It uses the correct
+joint IDs and limits from K-1 specifications, but full SDK integration
+requires Fast-DDS message definitions and proper mode management.
 
 Hardware Specifications:
 - 22 DOF total (Legs: 6×2, Arms: 4×2, Head: 2)
 - Force-controlled dual-encoder joints
-- ROS2 communication interface
+- Fast-DDS communication (ROS2 compatible)
 - Jetson Orin NX 8GB (117 TOPS)
 
+SDK Topics (Fast-DDS):
+- rt/low_state: Subscribe to joint feedback (IMU + MotorState)
+  * struct MotorState { float q, dq, ddq, tau_est; }
+- rt/low_cmd: Publish joint commands (MotorCmd)
+  * struct MotorCmd { float q, dq, tau, kp, kd, weight; }
+  * enum CmdType { PARALLEL, SERIAL }
+- rt/robot_states: Subscribe to robot mode and status
+- rt/odometer_state: Subscribe to odometry
+- rt/button_event: Subscribe to backboard buttons
+- rt/remote_controller_state: Subscribe to Xbox controller
+
 This module provides:
-- ROS2 joint trajectory control
-- Predefined gestures (wave, point, etc.)
-- Safe motion planning with collision avoidance
-- Integration with face recognition system
+- Gesture primitives (wave, point, rest)
+- Correct K-1 joint IDs and limits
+- Safety limits enforcement
+- Simulation mode for testing
+- Integration with face recognition
+
+For full features (locomotion, balance, complex motions), use the official SDK.
 """
 
 import logging
@@ -76,14 +95,17 @@ class ArmConfig:
     - Right arm: Joint IDs 6-9
     - Each arm: Shoulder Pitch/Roll/Yaw + Elbow (4 DOF)
     """
-    # ROS2 topic names (update with your K-1's actual topics)
-    joint_state_topic: str = "/joint_states"
-    trajectory_topic_left: str = "/left_arm_controller/joint_trajectory"
-    trajectory_topic_right: str = "/right_arm_controller/joint_trajectory"
+    # K-1 SDK Fast-DDS topics
+    low_state_topic: str = "rt/low_state"  # Subscribe to joint feedback
+    low_cmd_topic: str = "rt/low_cmd"      # Publish joint commands
+    robot_states_topic: str = "rt/robot_states"  # Robot mode/status
 
-    # Joint names (actual K-1 joint names)
-    left_arm_joints: List[str] = None
-    right_arm_joints: List[str] = None
+    # Joint IDs for K-1 motor control
+    left_arm_joint_ids: List[int] = None   # Joints 2-5
+    right_arm_joint_ids: List[int] = None  # Joints 6-9
+
+    # Control mode
+    cmd_type: str = "PARALLEL"  # or "SERIAL" - K-1 uses parallel structure
 
     # Safety limits (degrees) - from K-1 specifications
     # Left arm: IDs 2-5
@@ -98,27 +120,22 @@ class ArmConfig:
     right_shoulder_yaw_limits: Tuple[float, float] = (-109, 109)   # Joint 8
     right_elbow_limits: Tuple[float, float] = (-39, 129)           # Joint 9
 
+    # Control parameters (for K-1 MotorCmd)
+    default_kp: float = 50.0   # Proportional gain
+    default_kd: float = 2.0    # Derivative gain
+    default_weight: float = 1.0  # Command weight (0=internal controller, 1=user control)
+
     # Movement parameters
     default_duration: float = 2.0  # seconds for gesture completion
     wave_duration: float = 3.0     # seconds for wave gesture
     wave_cycles: int = 3           # number of wave cycles
 
     def __post_init__(self):
-        """Set default joint names if not provided"""
-        if self.left_arm_joints is None:
-            self.left_arm_joints = [
-                "Left Shoulder Pitch Joint",  # Joint 2
-                "Left Shoulder Roll Joint",   # Joint 3
-                "Left Shoulder Yaw Joint",    # Joint 4
-                "Left Elbow Joint"            # Joint 5
-            ]
-        if self.right_arm_joints is None:
-            self.right_arm_joints = [
-                "Right Shoulder Pitch Joint",  # Joint 6
-                "Right Shoulder Roll Joint",   # Joint 7
-                "Right Shoulder Yaw Joint",    # Joint 8
-                "Right Elbow Joint"            # Joint 9
-            ]
+        """Set default joint IDs if not provided"""
+        if self.left_arm_joint_ids is None:
+            self.left_arm_joint_ids = [2, 3, 4, 5]  # Left: Shoulder P/R/Y, Elbow
+        if self.right_arm_joint_ids is None:
+            self.right_arm_joint_ids = [6, 7, 8, 9]  # Right: Shoulder P/R/Y, Elbow
 
 
 class K1ArmController:
