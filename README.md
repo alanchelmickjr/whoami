@@ -86,11 +86,16 @@ One of the first platforms we're deploying on - a powerful robotics carrier boar
 ## Core Features (Platform-Portable)
 
 ### 🧠 Intelligence Layer
-- 👁️ **Advanced Face Recognition**
-  - Real-time face detection with Oak D cameras
-  - 128-dimensional face encoding
-  - Confidence-based matching with adjustable thresholds
-  - Batch processing and event callbacks
+- 👁️ **Advanced Face Recognition** (Dual-Engine Support)
+  - **YOLO + DeepFace** (K-1 Booster optimized):
+    - YOLOv8 for ultra-fast face detection on Jetson GPU
+    - DeepFace (Facenet/ArcFace) for deep learning embeddings
+    - Real-time performance: 15-30 FPS on Jetson Orin NX
+    - Integrated with voice interaction for name collection
+  - **dlib-based** (Traditional):
+    - 128-dimensional face encodings
+    - Confidence-based matching with adjustable thresholds
+  - Oak D camera integration for both engines
   - Thread-safe operations across platforms
 
 - 🗣️ **Voice Interaction System**
@@ -154,7 +159,27 @@ Configurable operational modes (availability depends on platform):
 
 ## Quick Start (Any Jetson Platform)
 
-### 1. Install WhoAmI Brain Software
+### Option A: K-1 Booster with YOLO (Recommended for K-1)
+
+```bash
+# Clone repository
+git clone https://github.com/alanchelmickjr/whoami.git
+cd whoami
+
+# Run K-1 setup (includes YOLO + DeepFace + Voice)
+./k1_setup.sh
+
+# Test the system
+python3 examples/k1_yolo_demo.py
+```
+
+**The K-1 will now:**
+- Detect faces using YOLO (GPU-accelerated)
+- Ask unknown people "What's your name?" via voice
+- Remember faces and greet known people
+- Display live video with face annotations
+
+### Option B: Standard Installation (All Platforms)
 
 ```bash
 # Clone repository
