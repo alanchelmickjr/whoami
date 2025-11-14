@@ -19,76 +19,109 @@ WhoAmI is **software for robotic brains**, not tied to any single hardware platf
 
 ## 🤖 Supported Platforms
 
-### Jetson Orin NX on K-1 Booster (First Production Target)
+WhoAmI runs on multiple Jetson-based platforms:
 
-One of the first platforms we're deploying on - a powerful robotics carrier board with advanced I/O capabilities:
+### K-1 Booster - Commercial Humanoid Robot
 
-### K-1 Booster Capabilities
+Production deployment platform - 22-DOF humanoid with RGBD vision:
 
-- 🎮 **2-Axis Gimbal System**
-  - 1-axis head gimbal (tilt) for camera/eye vertical movement
-  - 1-axis neck gimbal (tilt) for head forward/back orientation
-  - Coordinated movement for natural tracking and scanning
-  - Feetech servo control via dual serial ports
+**K-1 Booster Capabilities**
+
+- 🦾 **Full-Body Humanoid Control**
+  - 22 degrees of freedom (legs, arms, head)
+  - Force-controlled dual-encoder joints
+  - Fast-DDS/ROS2 SDK for motion control
+  - AI, WALK, and CUSTOM modes
+
+- 👁️ **RGBD Vision System**
+  - Intel RealSense or ToF depth camera
+  - RGB for face recognition
+  - 3D spatial awareness
+  - Integrated with WhoAmI face recognition
 
 - 🗣️ **Voice Interaction**
+  - Microphone array for voice input
+  - Speaker for TTS output
   - Ask unknown people for their names
   - Greet known people by name
-  - Audio source tracking and localization
-  - Text-to-speech status reporting
   - Offline speech recognition (Vosk)
 
-- 🌐 **Dual Ethernet Connectivity**
-  - Primary and backup network paths
-  - Automatic failover for mission-critical operations
-  - Remote VNC access for operators
-  - Distributed Gun.js database sync
-
 - 🎯 **Advanced Features**
-  - 16GB RAM for complex AI workloads
+  - Jetson Orin NX 8GB (117 TOPS)
   - 8 CPU cores for parallel processing
   - 1024 CUDA cores for GPU acceleration
-  - Expanded I/O (6 USB ports, dual M.2, PCIe)
-  - Hardware-backed encryption for secure data
+  - Dual Ethernet + WiFi connectivity
+  - IMU and odometry feedback
 
 ### K-1 Booster Platform Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│         Jetson Orin NX on K-1 Booster Platform          │
+│              K-1 Booster Humanoid Robot                 │
 ├─────────────────────────────────────────────────────────┤
 │  👁️  RGBD Camera (Intel RealSense / ToF)                │
 │     • Depth sensing for spatial awareness              │
 │     • RGB for face detection and recognition           │
 ├─────────────────────────────────────────────────────────┤
 │  🦾 22-DOF Humanoid Body                                 │
-│     • Legs: 6 DOF × 2                                  │
+│     • Legs: 6 DOF × 2 (walking, balancing)            │
 │     • Arms: 4 DOF × 2 (Shoulder P/R/Y + Elbow)        │
 │     • Head: 2 DOF (Pan + Tilt)                        │
 │     • Force-controlled dual-encoder joints             │
-│     • Fast-DDS/ROS2 communication                      │
-├─────────────────────────────────────────────────────────┤
-│  🎮 Head Gimbal Control (Custom Builds)                 │
-│     • Head: /dev/ttyTHS1 (tilt) - Feetech servo        │
-│     • Neck: /dev/ttyTHS2 (tilt) - Feetech servo        │
+│     • Fast-DDS/ROS2 SDK (Booster Robotics)            │
 ├─────────────────────────────────────────────────────────┤
 │  🎤 Audio I/O                                            │
 │     • Microphone array for voice input                 │
 │     • Speaker for TTS output                           │
 │     • Voice interaction & name asking                  │
 ├─────────────────────────────────────────────────────────┤
-│  🌐 Dual Ethernet (eth0 + eth1)                         │
-│     • Primary and backup network paths                 │
+│  🌐 Connectivity                                         │
+│     • Dual Ethernet + WiFi                             │
 │     • Remote access and control                        │
+│     • Button panel + Xbox controller support           │
 ├─────────────────────────────────────────────────────────┤
-│  🧠 Face Recognition + Encrypted Database                │
-│     • Local-first encrypted storage                    │
+│  🧠 WhoAmI Intelligence Layer                           │
+│     • YOLO + DeepFace face recognition                 │
+│     • Voice interaction system                         │
+│     • Local-first encrypted database (Gun.js)          │
 │     • Hardware-backed encryption                       │
-│     • Distributed P2P sync (Gun.js)                    │
 └─────────────────────────────────────────────────────────┘
 ```
 
 **➡️ See [K-1 Booster Setup Guide](docs/K1_BOOSTER_SETUP.md) for complete hardware configuration**
+
+### Robi - Custom Gimbal Vision System
+
+```
+┌─────────────────────────────────────────────────────────┐
+│        Robi (Reasonably Obtainable Bot Intelligence)    │
+│              Jetson Orin NX on Carrier Board            │
+├─────────────────────────────────────────────────────────┤
+│  👁️  OAK-D Series 3 Camera                              │
+│     • Stereo depth + RGB vision                        │
+│     • On-device neural inference                       │
+│     • 4K video with depth mapping                      │
+├─────────────────────────────────────────────────────────┤
+│  🎮 Gimbal Control System                               │
+│     • Head: /dev/ttyTHS1 (tilt) - Feetech servo        │
+│     • Neck: /dev/ttyTHS2 (tilt) - Feetech servo        │
+│     • Coordinated 2-axis tracking                      │
+│     • Smooth pursuit and scanning                      │
+├─────────────────────────────────────────────────────────┤
+│  🎤 Audio I/O                                            │
+│     • USB Audio Class 2.0 interface                    │
+│     • TTS voice output                                 │
+│     • Voice interaction & name asking                  │
+├─────────────────────────────────────────────────────────┤
+│  🧠 WhoAmI Intelligence Layer                           │
+│     • YOLO + DeepFace face recognition                 │
+│     • Voice interaction system                         │
+│     • Local-first encrypted database (Gun.js)          │
+│     • Hardware-backed encryption                       │
+└─────────────────────────────────────────────────────────┘
+```
+
+**➡️ Both platforms use the same WhoAmI intelligence software**
 
 ## Core Features (Platform-Portable)
 
@@ -102,7 +135,9 @@ One of the first platforms we're deploying on - a powerful robotics carrier boar
   - **dlib-based** (Traditional):
     - 128-dimensional face encodings
     - Confidence-based matching with adjustable thresholds
-  - RGBD camera integration (K-1: Intel RealSense / Custom: OAK-D)
+  - Camera integration:
+    - K-1 Booster: RGBD (Intel RealSense / ToF)
+    - Robi: OAK-D Series 3 (stereo depth + RGB)
   - Thread-safe operations across platforms
 
 - 🗣️ **Voice Interaction System**
@@ -389,14 +424,20 @@ if (result.recognized) {
 - Button and gamepad input
 - TF transforms (ROS2 compatible)
 
-### Custom Builds (Jetson + Peripherals)
+### Robi - Reasonably Obtainable Bot Intelligence (Custom Build)
 
-**Example: Gimbal-Based Vision System**
+**Platform**: Jetson Orin NX on carrier board
+
+**Vision System**
 - **Camera**: OAK-D Series 3 (depth + RGB stereo)
 - **Gimbal**: 2-3 axis Feetech STS/SCS servos
+- **Control**: Serial ports /dev/ttyTHS1-2
+- **Features**: Head and neck tilt for tracking
+
+**Other Peripherals**
 - **Audio**: USB Audio Class 2.0
-- **Serial**: /dev/ttyTHS1-2 for servo control
 - **Network**: Ethernet or WiFi
+- **Software**: WhoAmI face recognition + voice interaction
 
 ## Documentation
 
