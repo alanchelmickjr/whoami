@@ -3,7 +3,6 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Node.js 18+](https://img.shields.io/badge/node.js-18+-green.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Oak D](https://img.shields.io/badge/Oak%20D-Series%203-green.svg)](https://docs.luxonis.com/)
 [![Jetson](https://img.shields.io/badge/NVIDIA-Jetson-76B900.svg)](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/)
 
 **Portable robotics "brain" software for NVIDIA Jetson platforms** - featuring facial recognition, voice interaction, hardware-backed encryption, and multi-modal sensing. Designed for portability across various robotic platforms and carrier boards.
@@ -52,32 +51,40 @@ One of the first platforms we're deploying on - a powerful robotics carrier boar
   - Expanded I/O (6 USB ports, dual M.2, PCIe)
   - Hardware-backed encryption for secure data
 
-### K-1 Robot Architecture
+### K-1 Booster Platform Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │         Jetson Orin NX on K-1 Booster Platform          │
 ├─────────────────────────────────────────────────────────┤
-│  👁️  Oak D Series 3 Camera (Depth + Face Detection)     │
+│  👁️  RGBD Camera (Intel RealSense / ToF)                │
+│     • Depth sensing for spatial awareness              │
+│     • RGB for face detection and recognition           │
 ├─────────────────────────────────────────────────────────┤
-│  🎮 Gimbal Control                                       │
-│     • Head: /dev/ttyTHS1 (tilt)                        │
-│     • Neck: /dev/ttyTHS2 (tilt)                        │
+│  🦾 22-DOF Humanoid Body                                 │
+│     • Legs: 6 DOF × 2                                  │
+│     • Arms: 4 DOF × 2 (Shoulder P/R/Y + Elbow)        │
+│     • Head: 2 DOF (Pan + Tilt)                        │
+│     • Force-controlled dual-encoder joints             │
+│     • Fast-DDS/ROS2 communication                      │
 ├─────────────────────────────────────────────────────────┤
-│  🎤 Audio I/O (hw:2,0)                                   │
-│     • Voice interaction & name asking                   │
-│     • Audio source tracking                            │
-│     • TTS status reporting                             │
+│  🎮 Head Gimbal Control (Custom Builds)                 │
+│     • Head: /dev/ttyTHS1 (tilt) - Feetech servo        │
+│     • Neck: /dev/ttyTHS2 (tilt) - Feetech servo        │
+├─────────────────────────────────────────────────────────┤
+│  🎤 Audio I/O                                            │
+│     • Microphone array for voice input                 │
+│     • Speaker for TTS output                           │
+│     • Voice interaction & name asking                  │
 ├─────────────────────────────────────────────────────────┤
 │  🌐 Dual Ethernet (eth0 + eth1)                         │
-│     • VNC remote access (port 5900)                    │
-│     • SSH control (port 22)                            │
-│     • Web interface (port 8080)                        │
+│     • Primary and backup network paths                 │
+│     • Remote access and control                        │
 ├─────────────────────────────────────────────────────────┤
-│  🧠 Face Recognition + Gun.js Database                   │
+│  🧠 Face Recognition + Encrypted Database                │
 │     • Local-first encrypted storage                    │
 │     • Hardware-backed encryption                       │
-│     • Distributed P2P sync                             │
+│     • Distributed P2P sync (Gun.js)                    │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -95,7 +102,7 @@ One of the first platforms we're deploying on - a powerful robotics carrier boar
   - **dlib-based** (Traditional):
     - 128-dimensional face encodings
     - Confidence-based matching with adjustable thresholds
-  - Oak D camera integration for both engines
+  - RGBD camera integration (K-1: Intel RealSense / Custom: OAK-D)
   - Thread-safe operations across platforms
 
 - 🗣️ **Voice Interaction System**
@@ -108,8 +115,8 @@ One of the first platforms we're deploying on - a powerful robotics carrier boar
 - 🎭 **Multi-Modal Sensing**
   - **Visual**: Face detection, tracking, recognition
   - **Audio**: Voice identification, source localization
-  - **Depth**: 3D spatial awareness (Oak D stereo)
-  - **Motion**: Gimbal-based tracking (if available)
+  - **Depth**: 3D spatial awareness (RGBD camera)
+  - **Motion**: Gimbal-based tracking or full-body kinematics (K-1)
 
 ### Security & Privacy
 - 🔐 **Hardware-Backed Encryption** (Gun.js)
@@ -350,29 +357,46 @@ if (result.recognized) {
 }
 ```
 
-## K-1 Hardware Specs
+## Hardware Specifications
 
-### Jetson Orin NX Module
+### K-1 Booster (Commercial Humanoid Platform)
+
+**Jetson Orin NX 8GB Module**
 - **CPU**: 8-core ARM Cortex-A78AE
 - **GPU**: 1024 CUDA cores, 32 Tensor cores
-- **Memory**: 16GB LPDDR5
-- **AI Performance**: 100 TOPS
+- **Memory**: 8GB LPDDR5
+- **AI Performance**: 117 TOPS
 - **Power**: 10W-25W configurable
 
-### K-1 Carrier Board
-- **Ethernet**: 2x Gigabit (failover capable)
-- **USB**: 6 ports (4x USB 3.2)
-- **Storage**: 2x M.2 slots (NVMe)
-- **Expansion**: PCIe 4.0 x4
-- **Serial**: 3x UART (servo control)
-- **GPIO**: 40-pin header
-- **Power**: 19V DC, 65W minimum
+**22-DOF Humanoid Body**
+- **Legs**: 6 DOF × 2 (hip, knee, ankle joints)
+- **Arms**: 4 DOF × 2 (shoulder pitch/roll/yaw + elbow)
+- **Head**: 2 DOF (pan + tilt)
+- **Joints**: Force-controlled dual-encoder actuators
+- **Control**: Fast-DDS/ROS2 communication
+- **Modes**: AI, WALK, CUSTOM (low-level control)
 
-### Peripherals
-- **Camera**: OAK-D Series 3 (depth + RGB)
-- **Servos**: 3x Feetech STS/SCS (1Mbps)
+**Sensors & I/O**
+- **Camera**: RGBD (Intel RealSense or ToF)
+- **Audio**: Microphone array + speaker
+- **IMU**: 9-axis (accelerometer, gyro, magnetometer)
+- **Network**: Dual Ethernet + WiFi
+- **Power**: 24V battery system
+
+**SDK**: Booster Robotics SDK (Fast-DDS)
+- Joint control (position, velocity, torque)
+- IMU and odometry feedback
+- Button and gamepad input
+- TF transforms (ROS2 compatible)
+
+### Custom Builds (Jetson + Peripherals)
+
+**Example: Gimbal-Based Vision System**
+- **Camera**: OAK-D Series 3 (depth + RGB stereo)
+- **Gimbal**: 2-3 axis Feetech STS/SCS servos
 - **Audio**: USB Audio Class 2.0
-- **Network**: Dual Ethernet + optional WiFi
+- **Serial**: /dev/ttyTHS1-2 for servo control
+- **Network**: Ethernet or WiFi
 
 ## Documentation
 
@@ -500,12 +524,16 @@ Creating intelligent robotics software for NVIDIA Jetson platforms.
 
 ### Technology Stack
 - **[NVIDIA Jetson](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/)** - Edge AI compute platforms
-- **[Oak D Series 3](https://docs.luxonis.com/)** - Depth camera & stereo vision
+- **[Booster Robotics SDK](https://github.com/BoosterRobotics/booster_robotics_sdk)** - K-1 humanoid control (Fast-DDS/ROS2)
+- **[Oak D Series 3](https://docs.luxonis.com/)** - Depth camera for custom builds
+- **[Intel RealSense](https://www.intelrealsense.com/)** - RGBD cameras
 - **[Gun.js](https://gun.eco/)** - Decentralized P2P database
-- **[face_recognition](https://github.com/ageitgey/face_recognition)** - Face detection & encoding
+- **[YOLOv8](https://github.com/ultralytics/ultralytics)** - Fast face detection
+- **[DeepFace](https://github.com/serengil/deepface)** - Deep learning face recognition
+- **[face_recognition](https://github.com/ageitgey/face_recognition)** - Traditional face encoding
 - **[Vosk](https://alphacephei.com/vosk/)** - Offline speech recognition
 - **[pyttsx3](https://pyttsx3.readthedocs.io/)** - Text-to-speech synthesis
-- **[Feetech Servos](http://www.feetechrc.com/)** - Robotic servo control
+- **[Feetech Servos](http://www.feetechrc.com/)** - Servo control for custom gimbals
 
 ### Hardware Platforms
 Tested on:
