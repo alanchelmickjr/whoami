@@ -106,8 +106,8 @@ Production deployment platform - 22-DOF humanoid with RGBD vision:
 ├─────────────────────────────────────────────────────────┤
 │  👁️  Vision Head                                         │
 │     • OAK-D: Stereo depth + RGB                        │
-│     • Head: /dev/ttyTHS1 (tilt) - Feetech servo        │
-│     • Neck: /dev/ttyTHS2 (tilt) - Feetech servo        │
+│     • Head: /dev/ttyTHS1 (tilt control)                │
+│     • Neck: /dev/ttyTHS2 (tilt control)                │
 │     • 2-axis coordinated tracking                      │
 ├─────────────────────────────────────────────────────────┤
 │  🎤 Audio I/O                                            │
@@ -304,21 +304,11 @@ with face_api:
 ### 4. Test Gimbal Control
 
 ```bash
-# Test head gimbal (tilt)
-python3 -c "
-from whoami.feetech_sdk import FeetchController
-head = FeetchController('/dev/ttyTHS1', 1000000)
-head.ping(1)  # Tilt
-print('Head gimbal OK')
-"
+# Test gimbal system
+python3 -m whoami.gimbal_controller --test
 
-# Test neck gimbal (tilt)
-python3 -c "
-from whoami.feetech_sdk import FeetchController
-neck = FeetchController('/dev/ttyTHS2', 1000000)
-neck.ping(2)  # Neck tilt
-print('Neck gimbal OK')
-"
+# Or test directly with hardware detection
+python3 -m whoami.hardware_detector
 ```
 
 ## Other Jetson Platforms
@@ -438,7 +428,7 @@ if (result.recognized) {
 **Core Module (Persistent)**
 - **Brain**: Jetson Orin NX on carrier board
 - **Camera**: OAK-D Series 3 (depth + RGB stereo)
-- **Gimbal**: 2-3 axis Feetech STS/SCS servos (/dev/ttyTHS1-2)
+- **Gimbal**: 2-3 axis servo system (/dev/ttyTHS1-2)
 - **Arms**: Basic manipulators (always present)
 - **Wheels**: Base mobility system (always present)
 - **Audio**: USB Audio Class 2.0
@@ -582,15 +572,14 @@ Creating intelligent robotics software for NVIDIA Jetson platforms.
 ### Technology Stack
 - **[NVIDIA Jetson](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/)** - Edge AI compute platforms
 - **[Booster Robotics SDK](https://github.com/BoosterRobotics/booster_robotics_sdk)** - K-1 humanoid control (Fast-DDS/ROS2)
-- **[Oak D Series 3](https://docs.luxonis.com/)** - Depth camera for custom builds
-- **[Intel RealSense](https://www.intelrealsense.com/)** - RGBD cameras
+- **[Oak D Series 3](https://docs.luxonis.com/)** - Depth camera for Robi
+- **[Intel RealSense](https://www.intelrealsense.com/)** - RGBD cameras for K-1
 - **[Gun.js](https://gun.eco/)** - Decentralized P2P database
 - **[YOLOv8](https://github.com/ultralytics/ultralytics)** - Fast face detection
 - **[DeepFace](https://github.com/serengil/deepface)** - Deep learning face recognition
 - **[face_recognition](https://github.com/ageitgey/face_recognition)** - Traditional face encoding
 - **[Vosk](https://alphacephei.com/vosk/)** - Offline speech recognition
 - **[pyttsx3](https://pyttsx3.readthedocs.io/)** - Text-to-speech synthesis
-- **[Feetech Servos](http://www.feetechrc.com/)** - Servo control for custom gimbals
 
 ### Hardware Platforms
 Tested on:
