@@ -90,28 +90,35 @@ Production deployment platform - 22-DOF humanoid with RGBD vision:
 
 **➡️ See [K-1 Booster Setup Guide](docs/K1_BOOSTER_SETUP.md) for complete hardware configuration**
 
-### Robi - Custom Gimbal Vision System
+### Robi - Modular Morphing Platform
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │        Robi (Reasonably Obtainable Bot Intelligence)    │
-│              Jetson Orin NX on Carrier Board            │
+│         Modular Platform - Swappable Base System        │
 ├─────────────────────────────────────────────────────────┤
-│  👁️  OAK-D Series 3 Camera                              │
-│     • Stereo depth + RGB vision                        │
-│     • On-device neural inference                       │
-│     • 4K video with depth mapping                      │
+│  🧠 Core Module (Always Present)                         │
+│     • Jetson Orin NX brain                             │
+│     • OAK-D Series 3 camera head                       │
+│     • Gimbal system (head/neck tilt)                   │
+│     • Basic arms for manipulation                      │
+│     • Wheels for mobility                              │
 ├─────────────────────────────────────────────────────────┤
-│  🎮 Gimbal Control System                               │
-│     • Head: /dev/ttyTHS1 (tilt) - Feetech servo        │
-│     • Neck: /dev/ttyTHS2 (tilt) - Feetech servo        │
-│     • Coordinated 2-axis tracking                      │
-│     • Smooth pursuit and scanning                      │
+│  👁️  Vision Head                                         │
+│     • OAK-D: Stereo depth + RGB                        │
+│     • Head: /dev/ttyTHS1 (tilt control)                │
+│     • Neck: /dev/ttyTHS2 (tilt control)                │
+│     • 2-axis coordinated tracking                      │
 ├─────────────────────────────────────────────────────────┤
 │  🎤 Audio I/O                                            │
 │     • USB Audio Class 2.0 interface                    │
 │     • TTS voice output                                 │
 │     • Voice interaction & name asking                  │
+├─────────────────────────────────────────────────────────┤
+│  🔧 Morphing Base System (Swappable)                     │
+│     • Different bases for different tasks              │
+│     • Tool attachments and configurations              │
+│     • Currently building: New base                     │
 ├─────────────────────────────────────────────────────────┤
 │  🧠 WhoAmI Intelligence Layer                           │
 │     • YOLO + DeepFace face recognition                 │
@@ -121,7 +128,9 @@ Production deployment platform - 22-DOF humanoid with RGBD vision:
 └─────────────────────────────────────────────────────────┘
 ```
 
-**➡️ Both platforms use the same WhoAmI intelligence software**
+**➡️ Robi: Modular platform with persistent head/brain and swappable bases**
+**➡️ K-1: Commercial integrated humanoid with fixed body structure**
+**➡️ Both use the same WhoAmI intelligence software**
 
 ## Core Features (Platform-Portable)
 
@@ -295,21 +304,11 @@ with face_api:
 ### 4. Test Gimbal Control
 
 ```bash
-# Test head gimbal (tilt)
-python3 -c "
-from whoami.feetech_sdk import FeetchController
-head = FeetchController('/dev/ttyTHS1', 1000000)
-head.ping(1)  # Tilt
-print('Head gimbal OK')
-"
+# Test gimbal system
+python3 -m whoami.gimbal_controller --test
 
-# Test neck gimbal (tilt)
-python3 -c "
-from whoami.feetech_sdk import FeetchController
-neck = FeetchController('/dev/ttyTHS2', 1000000)
-neck.ping(2)  # Neck tilt
-print('Neck gimbal OK')
-"
+# Or test directly with hardware detection
+python3 -m whoami.hardware_detector
 ```
 
 ## Other Jetson Platforms
@@ -424,20 +423,27 @@ if (result.recognized) {
 - Button and gamepad input
 - TF transforms (ROS2 compatible)
 
-### Robi - Reasonably Obtainable Bot Intelligence (Custom Build)
+### Robi - Reasonably Obtainable Bot Intelligence (Modular Platform)
 
-**Platform**: Jetson Orin NX on carrier board
-
-**Vision System**
+**Core Module (Persistent)**
+- **Brain**: Jetson Orin NX on carrier board
 - **Camera**: OAK-D Series 3 (depth + RGB stereo)
-- **Gimbal**: 2-3 axis Feetech STS/SCS servos
-- **Control**: Serial ports /dev/ttyTHS1-2
-- **Features**: Head and neck tilt for tracking
-
-**Other Peripherals**
+- **Gimbal**: 2-3 axis servo system (/dev/ttyTHS1-2)
+- **Arms**: Basic manipulators (always present)
+- **Wheels**: Base mobility system (always present)
 - **Audio**: USB Audio Class 2.0
 - **Network**: Ethernet or WiFi
-- **Software**: WhoAmI face recognition + voice interaction
+
+**Morphing Base System**
+- **Concept**: Swappable bases and tool attachments for different tasks
+- **Core stays constant**: Head, brain, vision, arms, wheels
+- **Base adapts**: Different configurations for different missions
+- **Currently**: Building new base configuration
+
+**Software**
+- WhoAmI intelligence layer (face recognition + voice)
+- Same software stack as K-1 Booster
+- Hardware-backed encryption for identity storage
 
 ## Documentation
 
@@ -566,15 +572,14 @@ Creating intelligent robotics software for NVIDIA Jetson platforms.
 ### Technology Stack
 - **[NVIDIA Jetson](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/)** - Edge AI compute platforms
 - **[Booster Robotics SDK](https://github.com/BoosterRobotics/booster_robotics_sdk)** - K-1 humanoid control (Fast-DDS/ROS2)
-- **[Oak D Series 3](https://docs.luxonis.com/)** - Depth camera for custom builds
-- **[Intel RealSense](https://www.intelrealsense.com/)** - RGBD cameras
+- **[Oak D Series 3](https://docs.luxonis.com/)** - Depth camera for Robi
+- **[Intel RealSense](https://www.intelrealsense.com/)** - RGBD cameras for K-1
 - **[Gun.js](https://gun.eco/)** - Decentralized P2P database
 - **[YOLOv8](https://github.com/ultralytics/ultralytics)** - Fast face detection
 - **[DeepFace](https://github.com/serengil/deepface)** - Deep learning face recognition
 - **[face_recognition](https://github.com/ageitgey/face_recognition)** - Traditional face encoding
 - **[Vosk](https://alphacephei.com/vosk/)** - Offline speech recognition
 - **[pyttsx3](https://pyttsx3.readthedocs.io/)** - Text-to-speech synthesis
-- **[Feetech Servos](http://www.feetechrc.com/)** - Servo control for custom gimbals
 
 ### Hardware Platforms
 Tested on:
