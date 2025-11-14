@@ -141,18 +141,18 @@
       },
       "gimbal_system": {
         "type": "head_neck_dual",
-        "total_axes": 3,
+        "total_axes": 2,
         "head_gimbal": {
           "serial_port": "/dev/ttyTHS1",
-          "axes": ["pan", "tilt"],
-          "description": "Head pan/tilt gimbal (eye/camera movement)"
+          "axes": ["tilt"],
+          "description": "Head tilt gimbal (eye/camera up/down movement)"
         },
         "neck_gimbal": {
           "serial_port": "/dev/ttyTHS2",
           "axes": ["neck_tilt"],
           "description": "Neck tilt gimbal (nod forward/back)"
         },
-        "notes": "K-1 uses 2-axis head gimbal + 1-axis neck tilt (total 3 axes)"
+        "notes": "K-1 uses 1-axis head tilt + 1-axis neck tilt (total 2 axes)"
       },
       "performance": {
         "cpu_cores": 8,

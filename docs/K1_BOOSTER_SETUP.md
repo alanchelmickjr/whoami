@@ -5,7 +5,7 @@ Complete setup guide for Jetson Orin NX on K-1 Booster carrier board with head/n
 ## Overview
 
 The K-1 booster configuration provides:
-- **Dual Gimbal System**: Separate head (pan/tilt) and neck (3-axis) control
+- **Dual Gimbal System**: Separate head (tilt) and neck (tilt) control
 - **Audio I/O**: Voice reporting, audio tracking, and speech recognition
 - **Remote Access**: VNC and direct access for operator control
 - **Expanded I/O**: Dual Ethernet, additional USB, M.2 slots
@@ -19,13 +19,13 @@ The K-1 booster configuration provides:
 - OAK-D Series 3 camera with USB 3.0 cable
 
 ### Gimbal System
-- Head Gimbal (2-axis):
-  - 2x Feetech STS/SCS servos for pan/tilt
+- Head Gimbal (1-axis):
+  - 1x Feetech STS/SCS servo for tilt (up/down)
   - Serial connection to `/dev/ttyTHS1`
 - Neck Gimbal (1-axis):
   - 1x Feetech STS/SCS servo for neck tilt (forward/back nod)
   - Serial connection to `/dev/ttyTHS2`
-- Total: 3-axis gimbal system (head pan, head tilt, neck tilt)
+- Total: 2-axis gimbal system (head tilt, neck tilt)
 
 ### Audio System
 - USB audio interface (recommended: USB Audio Class 2.0)
@@ -104,9 +104,9 @@ I2C Buses: [0, 2, 8]
 === Gimbal Configuration ===
 Type: head_neck_dual
 Head Gimbal Port: /dev/ttyTHS1
-Head Gimbal Axes: pan, tilt
+Head Gimbal Axes: tilt
 Neck Gimbal Port: /dev/ttyTHS2
-Neck Gimbal Axes: neck_pan, neck_tilt, neck_roll
+Neck Gimbal Axes: neck_tilt
 
 === Audio Configuration ===
 Input Device: hw:2,0
@@ -125,16 +125,15 @@ Resolution: 1920x1080
 
 ### 1. Wire Head Gimbal to ttyTHS1
 
-Connect Feetech servos:
-- Servo 1 (Pan): ID 1
-- Servo 2 (Tilt): ID 2
+Connect Feetech servo:
+- Servo 1 (Tilt): ID 1
 - Baudrate: 1Mbps
 - Serial: `/dev/ttyTHS1`
 
 ### 2. Wire Neck Gimbal to ttyTHS2
 
 Connect Feetech servo:
-- Servo 3 (Neck Tilt): ID 3
+- Servo 2 (Neck Tilt): ID 2
 - Baudrate: 1Mbps
 - Serial: `/dev/ttyTHS2`
 
@@ -145,8 +144,7 @@ Connect Feetech servo:
 python3 -c "
 from whoami.feetech_sdk import FeetchController
 head = FeetchController('/dev/ttyTHS1', 1000000)
-head.ping(1)  # Ping pan servo
-head.ping(2)  # Ping tilt servo
+head.ping(1)  # Ping tilt servo
 print('Head gimbal OK')
 "
 
@@ -154,7 +152,7 @@ print('Head gimbal OK')
 python3 -c "
 from whoami.feetech_sdk import FeetchController
 neck = FeetchController('/dev/ttyTHS2', 1000000)
-neck.ping(3)  # Ping neck tilt servo
+neck.ping(2)  # Ping neck tilt servo
 print('Neck gimbal OK')
 "
 ```
