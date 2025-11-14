@@ -6,25 +6,15 @@
     "description": "Dual gimbal system configuration for K-1",
 
     "head_gimbal": {
-      "description": "Head pan/tilt gimbal for camera/eye movement",
+      "description": "Head tilt gimbal for camera/eye vertical movement",
       "communication": {
         "serial_port": "/dev/ttyTHS1",
         "baudrate": 1000000,
         "timeout": 0.05
       },
       "servos": {
-        "pan": {
-          "id": 1,
-          "min_angle": -90,
-          "max_angle": 90,
-          "home_position": 0,
-          "max_speed": 500,
-          "acceleration": 100,
-          "inverted": false,
-          "description": "Head horizontal rotation (left/right)"
-        },
         "tilt": {
-          "id": 2,
+          "id": 1,
           "min_angle": -45,
           "max_angle": 45,
           "home_position": 0,
@@ -51,7 +41,7 @@
       },
       "servos": {
         "neck_tilt": {
-          "id": 3,
+          "id": 2,
           "min_angle": -45,
           "max_angle": 45,
           "home_position": 0,
