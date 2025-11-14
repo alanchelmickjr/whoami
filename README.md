@@ -8,23 +8,61 @@ A simple, portable, and modular facial recognition framework designed for Oak D 
 
 ## Features
 
+### Core Recognition
 - 🎥 **Oak D Series 3 Support**: Optimized for Oak D cameras using DepthAI SDK
-- 🖥️ **Simple GUI**: Easy-to-use graphical interface built with tkinter
-- 💻 **CLI Interface**: Command-line interface for headless operation
 - 👤 **Face Management**: Add, remove, and manage known faces
-- 🔒 **Secure**: Local processing, no cloud dependencies
-- 🚀 **Portable**: Lightweight and modular design for easy integration
-- 🤖 **Robot-Ready**: Perfect for robotics applications on Jetson platforms
 - 🔌 **New Class-Based API**: Clean, modular, and thread-safe face recognition library
 - 📊 **Batch Processing**: Process multiple images and videos efficiently
 - 🔔 **Event Callbacks**: React to face detection and recognition events
 - 🧵 **Thread-Safe**: Designed for multi-threaded applications
 
+### Interfaces
+- 🖥️ **Simple GUI**: Easy-to-use graphical interface built with tkinter
+- 💻 **CLI Interface**: Command-line interface for headless operation
+- 🗣️ **Voice Interaction**: Ask names and greet people with audio feedback
+- 🎤 **Speech Recognition**: Recognize voice input (online or offline)
+- 🔊 **Text-to-Speech**: Provide audio feedback and status updates
+
+### Hardware & Integration
+- 🔒 **Secure**: Local processing, no cloud dependencies
+- 🚀 **Portable**: Lightweight and modular design for easy integration
+- 🤖 **Robot-Ready**: Perfect for robotics applications on Jetson platforms
+- 🎛️ **Hardware Auto-Detection**: Automatic platform detection and configuration
+- 🎮 **Gimbal Control**: 3-axis gimbal support for head/neck movement
+- 🌐 **Remote Access**: VNC, SSH, and web interface support
+- 🔌 **Multi-Platform**: Jetson, Raspberry Pi, Mac, and Linux desktop
+
 ## Hardware Requirements
 
+### Supported Platforms
+
+The WhoAmI system now includes automatic hardware detection and configuration for multiple platforms:
+
+- **NVIDIA Jetson**
+  - Jetson Orin Nano DevKit
+  - Jetson Orin NX DevKit
+  - Jetson Orin NX on K-1 Booster (3-axis gimbal + audio)
+  - Jetson AGX Orin DevKit
+- **Raspberry Pi 4**
+- **Apple Silicon Mac** (M1/M2/M3/M4)
+- **Generic Linux Desktop** (x86_64)
+
+### Core Requirements
+
 - Oak D Series 3 camera (or compatible DepthAI device)
-- Jetson Orin Nano (or any system with USB 3.0)
+- USB 3.0 port
 - Python 3.8 or higher
+
+### K-1 Booster Configuration
+
+The K-1 booster carrier board adds advanced capabilities:
+- **3-Axis Gimbal System**: 2-axis head (pan/tilt) + 1-axis neck (tilt)
+- **Audio I/O**: Voice reporting, audio tracking, speech recognition
+- **Dual Ethernet**: Primary and backup network with automatic failover
+- **Remote Access**: VNC, SSH, and web interface support
+- **Operational Modes**: Remote VNC, direct access, or autonomous
+
+See [K-1 Booster Setup Guide](docs/K1_BOOSTER_SETUP.md) for detailed configuration.
 
 ## Installation
 
@@ -54,6 +92,91 @@ For face_recognition library dependencies:
 ```bash
 sudo apt-get install -y build-essential cmake libopenblas-dev liblapack-dev libx11-dev libgtk-3-dev
 ```
+
+## Hardware Configuration
+
+### Automatic Hardware Detection
+
+The system automatically detects your hardware platform and loads the appropriate configuration:
+
+```python
+from whoami.hardware_detector import detect_hardware, get_serial_port
+
+# Detect hardware platform
+platform = detect_hardware()
+print(f"Running on: {platform}")
+# Example output: "jetson_orin_nx_k1"
+
+# Get serial port for this platform
+port = get_serial_port()
+print(f"Serial port: {port}")
+# Example output: "/dev/ttyTHS1"
+```
+
+### Manual Hardware Override
+
+Override auto-detection if needed:
+
+```bash
+# Set specific hardware profile
+export WHOAMI_HARDWARE_PROFILE="jetson_orin_nx_k1"
+
+# Override serial port
+export WHOAMI_SERIAL_PORT="/dev/ttyTHS1"
+
+# Run application
+python -m whoami.gui
+```
+
+### Hardware Profiles
+
+All hardware configurations are defined in `config/hardware/hardware_profiles.json`:
+
+```bash
+# View detected hardware info
+python -m whoami.hardware_detector
+
+# Output includes:
+# - Hardware name and type
+# - Serial ports and peripherals
+# - Gimbal configuration (if applicable)
+# - Audio devices (if applicable)
+# - Remote access settings
+```
+
+### Adding New Hardware
+
+To add support for new hardware configurations:
+
+1. Add profile to `config/hardware/hardware_profiles.json`
+2. Define detection criteria (device tree model, GPIO pins, etc.)
+3. Specify peripherals (serial, GPIO, I2C, audio, etc.)
+4. Test detection and verify configuration
+
+See [Hardware Configuration Guide](docs/HARDWARE_CONFIG_GUIDE.md) for detailed instructions.
+
+### K-1 Booster Testing
+
+Multiple K-1 booster units are available for testing! The configuration includes:
+
+**Serial Ports:**
+- `/dev/ttyTHS1` - Head gimbal (pan/tilt)
+- `/dev/ttyTHS2` - Neck gimbal (tilt)
+
+**Audio:**
+- Input: `hw:2,0` (USB microphone for voice input)
+- Output: `hw:2,0` (USB speaker for voice reporting)
+
+**Network:**
+- `eth0` - Primary Ethernet
+- `eth1` - Secondary Ethernet (automatic failover)
+
+**Next Steps for K-1 Deployment:**
+1. Test hardware detection on actual K-1 booster
+2. Verify serial port assignments (ttyTHS1, ttyTHS2)
+3. Configure audio devices (adjust hw:2,0 if needed)
+4. Test GPIO probe pin for carrier detection (GPIO 194)
+5. Integrate voice interaction with face recognition
 
 ## Usage
 
@@ -333,9 +456,24 @@ python examples/api_batch_processing.py
 
 ## 📚 Documentation
 
+### Core Documentation
 - **[API Reference](docs/API_REFERENCE.md)**: Complete API documentation with all classes, methods, and parameters
 - **[Usage Guide](docs/USAGE_GUIDE.md)**: Comprehensive guide with code examples and best practices
 - **[Examples](examples/)**: Working example scripts demonstrating various features
+
+### Hardware & Configuration
+- **[Hardware Configuration Guide](docs/HARDWARE_CONFIG_GUIDE.md)**: Complete guide for hardware profiles and detection
+- **[K-1 Booster Setup](docs/K1_BOOSTER_SETUP.md)**: Setup guide for Jetson Orin NX on K-1 booster
+- **[Voice Interaction Guide](docs/VOICE_INTERACTION_GUIDE.md)**: Voice-based name asking and audio feedback
+- **[Gimbal 3DOF Guide](docs/GIMBAL_3DOF_GUIDE.md)**: 3-axis gimbal system integration
+- **[Genesis VLA Guide](docs/GENESIS_VLA_GUIDE.md)**: Vision-Language-Action model training
+- **[Spatial Awareness Guide](docs/SPATIAL_AWARENESS_GUIDE.md)**: Environmental understanding
+- **[Servo Safety Guide](docs/SERVO_SAFETY_GUIDE.md)**: Servo health monitoring and safety
+
+### Installation & Setup
+- **[Installation Guide](INSTALLATION.md)**: Complete installation instructions
+- **[Setup Quick Reference](SETUP_QUICK_REFERENCE.md)**: Quick setup commands
+- **[Jetson & M4 Setup](SETUP_JETSON_M4.md)**: Platform-specific setup guide
 
 ### Example Scripts
 
@@ -373,19 +511,34 @@ For issues and questions, please open an issue on GitHub.
 
 ## Roadmap
 
-- [x] ~~Class-based refactored API~~ ✅ Complete!
-- [x] ~~Event callbacks system~~ ✅ Complete!
-- [x] ~~Thread-safe operations~~ ✅ Complete!
-- [x] ~~Batch processing support~~ ✅ Complete!
+### Completed Features ✅
+- [x] ~~Class-based refactored API~~
+- [x] ~~Event callbacks system~~
+- [x] ~~Thread-safe operations~~
+- [x] ~~Batch processing support~~
+- [x] ~~Face detection confidence thresholds~~
+- [x] ~~Export/import face database~~
+- [x] ~~Hardware configuration system~~
+- [x] ~~K-1 Booster support with 3-axis gimbal~~
+- [x] ~~Audio I/O configuration~~
+- [x] ~~Multi-platform hardware detection~~
+
+### In Progress 🚧
+- [ ] **Voice interaction system** - Ask names and identify people via audio
+- [ ] **Audio source tracking** - Orient gimbal toward speakers
+- [ ] **Voice commands** - Control system via speech
+
+### Planned Features 📋
 - [ ] Multi-camera support
 - [ ] GPU acceleration on Jetson
 - [ ] REST API for remote access
-- [x] ~~Face detection confidence thresholds~~ ✅ Complete!
-- [x] ~~Export/import face database~~ ✅ Complete!
 - [ ] Integration with ROS (Robot Operating System)
 - [ ] Real-time streaming API
 - [ ] Face tracking across frames
 - [ ] Age and gender estimation
+- [ ] Emotion detection
+- [ ] Multi-language voice support
+- [ ] Voice biometrics for speaker identification
 
 ## Credits
 
