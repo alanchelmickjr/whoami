@@ -572,7 +572,10 @@ if (result.recognized) {
 - **[Deployment](DEPLOYMENT.md)** - Production deployment
 
 ### Platform-Specific Guides
-- **[K-1 Booster Setup](docs/K1_BOOSTER_SETUP.md)** - Orin NX on K-1 carrier
+- **[K-1 Booster Setup](docs/K1_BOOSTER_SETUP.md)** - K-1 hardware setup
+- **[K-1 First Test Protocol](docs/K1_FIRST_TEST.md)** ⭐ Initial testing & dance moves (Helmick & Foroughi)
+- **[K-1 Autonomous Face Interaction](docs/K1_AUTONOMOUS_FACE_INTERACTION.md)** - Face exploration system
+- **[F5-TTS Setup](docs/F5-TTS_SETUP.md)** - High-quality neural voice with child voice options
 - **[Gimbal Control](docs/GIMBAL_3DOF_GUIDE.md)** - Gimbal configuration (optional)
 
 ### Advanced Features
