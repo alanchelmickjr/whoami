@@ -9,7 +9,7 @@ The K-1 is a 95cm tall commercial humanoid robot with:
 - **Built-in motors** controlled via Booster SDK (DDS/ROS2)
 - **2-DoF head control**: yaw ±60°, pitch -30° to 45°
 - **18-DoF total**: Arms, legs, head movement
-- **OAK-D camera** for vision (USB 3.0)
+- **Zod camera** for vision (USB 3.0)
 - **Audio I/O** for voice interaction
 
 **Important**: K-1 uses the Booster SDK for all motor control. No external servos or serial connections needed - everything is controlled via DDS (Fast-DDS/ROS2).
@@ -415,8 +415,13 @@ booster.RotateHead(0.5, 0.5)  # ✅
 ### Camera Not Found
 
 ```bash
-# List video devices
+# List video devices (camera shows as "Zod")
 v4l2-ctl --list-devices
+
+# Should show something like:
+# Zod (usb-...):
+#   /dev/video0
+#   /dev/video1
 
 # Test OpenCV
 python3 -c "import cv2; print(cv2.VideoCapture(0).read()[0])"

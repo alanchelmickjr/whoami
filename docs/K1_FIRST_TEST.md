@@ -369,11 +369,12 @@ cat config/k1_booster_config.json | grep ref_audio
 
 **Issue 3: Camera feed black screen**
 ```bash
-# Check camera is detected
-ls -l /dev/video*
+# Check camera is detected (Zod camera)
+v4l2-ctl --list-devices
+# Should show: Zod (usb-...) /dev/video0
 
-# Restart camera node if needed
-sudo systemctl restart zed-camera  # If using ZED
+# If camera not found, replug USB or reboot
+sudo reboot
 ```
 
 ---
