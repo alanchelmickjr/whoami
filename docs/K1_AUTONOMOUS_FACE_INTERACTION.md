@@ -108,12 +108,19 @@ The K-1 can autonomously explore its environment, find faces, and engage in pers
 ### Quick Start
 
 ```bash
-# SSH to K-1
-ssh booster@192.168.88.153
+# SSH to K-1 (via WiFi or Ethernet)
+ssh booster@192.168.x.x
 
 # Run demo
 cd /home/user/whoami
-python examples/k1_autonomous_face_interaction.py eth0
+
+# Network interface parameter (for Booster SDK DDS communication, NOT for SSH):
+# - Use eth0 if robot configured for wired DDS (initial setup, tethered use)
+# - Use wlan0 for wireless DDS (tested, works great with Xbox controller)
+python examples/k1_autonomous_face_interaction.py wlan0
+
+# Or use eth0 for wired DDS communication:
+# python examples/k1_autonomous_face_interaction.py eth0
 ```
 
 ### Demo Mode (No Robot)
@@ -131,7 +138,10 @@ from whoami.k1_face_explorer import K1FaceExplorer
 from whoami.voice_interaction import VoiceInteraction
 
 # Initialize K-1
-ChannelFactory.Instance().Init(0, 'eth0')
+# Network interface options:
+# - 'wlan0' for wireless DDS (recommended, tested with Xbox controller)
+# - 'eth0' for wired DDS
+ChannelFactory.Instance().Init(0, 'wlan0')  # or 'eth0'
 booster = B1LocoClient()
 booster.Init()
 
