@@ -136,12 +136,23 @@ class YOLOFaceDetector:
         Args:
             model_path: Path to YOLO model weights
             confidence_threshold: Minimum detection confidence
-            device: Device to run on ('cuda:0' for Jetson GPU)
+            device: Device to run on ('cuda:0' for Jetson GPU, 'cpu' for CPU)
         """
         if not YOLO_AVAILABLE:
             raise ImportError("ultralytics not installed. Run: pip install ultralytics")
 
         self.confidence_threshold = confidence_threshold
+
+        # Auto-detect best available device
+        try:
+            import torch
+            if device == 'cuda:0' and not torch.cuda.is_available():
+                logger.warning("CUDA not available, falling back to CPU")
+                device = 'cpu'
+        except ImportError:
+            logger.warning("PyTorch not available, using CPU")
+            device = 'cpu'
+
         self.device = device
 
         # Load YOLO model
@@ -154,8 +165,10 @@ class YOLOFaceDetector:
             # Try default face detection model
             try:
                 self.model = YOLO('yolov8n.pt')  # General object detection
-                logger.info("Using YOLOv8n general model (will detect 'person' class)")
-            except:
+                self.model.to(device)
+                logger.info(f"Using YOLOv8n general model on {device} (will detect 'person' class)")
+            except Exception as e2:
+                logger.error(f"Failed to load fallback model: {e2}")
                 raise RuntimeError("Could not load any YOLO model")
 
         # Warm up model
