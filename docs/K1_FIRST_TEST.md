@@ -146,70 +146,76 @@ nano /home/user/whoami/config/k1_booster_config.json
 
 ---
 
-### Test 1.5: DEBUG & TEACH Modes (RECOMMENDED)
+### Test 1.5: Mode Transitions and Movement (RECOMMENDED)
 
-**Objective:** Use safer modes for testing and calibration
+**Objective:** Test different robot modes and basic movement
 
-**Why Use These Modes:**
-- **DEBUG**: Slower, safer movements - perfect for first tests
-- **TEACH**: Manual positioning - find optimal camera angles
+**Available Modes (from Booster SDK):**
+- **DAMPING** (`kDamping`): Motors relaxed - safe shutdown/handling
+- **PREPARE** (`kPrepare`): Standing ready - head control active
+- **WALKING** (`kWalking`): Locomotion mode - movement commands active
+- **CUSTOM** (`kCustom`): Programmable custom behaviors
 
 **Steps:**
 
-1. **Enable DEBUG Mode** (Safer Testing)
-   ```
-   Type: md    # DEBUG mode (check your control script for command)
-   # Or use Python:
-   # booster.ChangeMode(RobotMode.kDebug)
+1. **Test PREPARE Mode** (Normal Operation)
+   ```python
+   # In Python or your control script:
+   booster.ChangeMode(RobotMode.kPrepare)
+   time.sleep(2)  # Wait for robot to stand
+
+   # Head control should now work
+   booster.RotateHead(0.0, 0.0)  # Center
    ```
 
-2. **Test Head Movement in DEBUG** (Slower, Safer)
+2. **Test Head Movement in PREPARE Mode**
    ```
-   ho - Head center (slow movement)
-   hl - Head left (slow - easier to observe)
+   ho - Head center
+   hl - Head left
    hr - Head right
    hu - Head up
    hd - Head down
-   ho - Return to center
    ```
 
-   **Benefits:**
-   - Movements are SLOWER - easier to see camera tracking
-   - SAFER - reduced torque, less risk of damage
-   - Better for learning system behavior
+   **PREPARE mode is best for:**
+   - Head control and face interaction
+   - Standing still while tracking faces
+   - Camera-based tasks
+   - Voice interaction
 
-3. **Enable TEACH Mode** (Manual Positioning)
-   ```
-   Type: mt    # TEACH mode (check your control script)
-   # Or use Python:
-   # booster.ChangeMode(RobotMode.kTeach)
-   ```
+3. **Test WALKING Mode** (Basic Movement)
+   ```python
+   # Enable walking
+   booster.ChangeMode(RobotMode.kWalking)
+   time.sleep(1)
 
-4. **Manual Camera Angle Calibration**
-   ```
-   # In another terminal, view camera:
-   python basic_cam.py
-   # Access: http://192.168.x.x:8080
+   # Try basic movement
+   booster.Move(0.2, 0.0, 0.0)  # Forward 0.2 m/s
+   time.sleep(2)
 
-   # Now manually move Twiki's head while watching camera feed:
-   # - Find angles where camera sees faces clearly
-   # - Test full range of motion (yaw ±60°, pitch -30° to 45°)
-   # - Note optimal positions for face scanning
-   # - Verify "home" position (0,0) is centered
+   booster.Move(0.0, 0.0, 0.0)  # Stop
    ```
 
-5. **Return to Normal Mode**
-   ```
-   Type: mp    # Back to PREP mode
+   **WALKING mode enables:**
+   - Forward/backward movement (vx parameter)
+   - Strafing side-to-side (vy parameter)
+   - Rotation (vyaw parameter)
+   - Head control still works while walking
+
+4. **Safe Shutdown Sequence**
+   ```python
+   # Always end in DAMPING mode
+   booster.ChangeMode(RobotMode.kDamping)
+   time.sleep(1)
    ```
 
 **Expected Results:**
-- ✅ DEBUG mode: Movements are noticeably slower and smoother
-- ✅ TEACH mode: Can manually position head with minimal resistance
-- ✅ Camera feed visible while adjusting head position
-- ✅ Identified optimal angles for face detection
+- ✅ PREPARE mode: Robot stands stable, head control responsive
+- ✅ WALKING mode: Robot can move and navigate
+- ✅ DAMPING mode: Motors relax, safe to handle
+- ✅ Smooth transitions between modes
 
-**Pro Tip:** Use TEACH mode + camera feed to find the best scan positions for autonomous face exploration!
+**Pro Tip:** Use PREPARE mode for face interaction development - it provides stable standing with active head control, perfect for camera-based AI features!
 
 ---
 

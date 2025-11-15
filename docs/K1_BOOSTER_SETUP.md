@@ -442,84 +442,68 @@ print(f"Trusted peers: {stats['trusted_peers']}")
 
 ## Robot Operational Modes
 
-K-1 has five operational modes:
+K-1 has four operational modes (from Booster SDK):
 
 | Mode | Value | Description | Head Control | Use Case |
 |------|-------|-------------|--------------|----------|
-| DAMP | `RobotMode.kDamp` | Motors relaxed, safe for handling | ❌ No | Safe shutdown, handling |
-| PREP | `RobotMode.kPrepare` | Standing, ready for commands | ✅ Yes | Normal operation |
-| WALK | `RobotMode.kWalk` | Walking mode | ✅ Yes | Locomotion |
-| DEBUG | `RobotMode.kDebug` | **Slow, safe testing mode** | ✅ Yes (slower) | **Development, testing** |
-| TEACH | `RobotMode.kTeach` | **Manual positioning mode** | 🔧 Manual | **Calibration, teaching** |
+| DAMPING | `RobotMode.kDamping` | Motors relaxed, safe for handling | ❌ No | Safe shutdown, manual handling |
+| PREPARE | `RobotMode.kPrepare` | Standing, ready for commands | ✅ Yes | Normal operation, head control |
+| WALKING | `RobotMode.kWalking` | Walking/locomotion mode | ✅ Yes | Movement, navigation |
+| CUSTOM | `RobotMode.kCustom` | Custom programmable mode | ⚙️ Varies | Advanced custom behaviors |
 
 **Mode Transition Sequence**:
 ```python
-# Safe startup
-booster.ChangeMode(RobotMode.kDamp)
+# Safe startup sequence
+booster.ChangeMode(RobotMode.kDamping)
 time.sleep(1)
 
 booster.ChangeMode(RobotMode.kPrepare)
-time.sleep(2)  # Wait for robot to stand
+time.sleep(2)  # Wait for robot to stand up
 
 # Now you can control head, arms, etc.
 booster.RotateHead(0.0, 0.0)
 ```
 
-**DEBUG Mode for Safe Testing** (RECOMMENDED for face interaction development):
+**Recommended Modes for Face Interaction Development**:
+
+For head control and face interaction, use **PREPARE mode**:
 ```python
-# Enable DEBUG mode - slower, safer movements
-booster.ChangeMode(RobotMode.kDebug)
+# Enable PREPARE mode - stable standing, head control active
+booster.ChangeMode(RobotMode.kPrepare)
+time.sleep(2.0)  # Wait for robot to stabilize
+
+# Head control now active
+booster.RotateHead(0.0, 0.785)  # Look left
 time.sleep(1.0)
 
-# Benefits for testing:
-# 1. SLOWER head movements - easier to observe camera tracking
-# 2. SAFER - reduced torque, won't damage hardware on collision
-# 3. MORE FEEDBACK - better diagnostic output
-# 4. PREDICTABLE - consistent, controlled movements for testing
+booster.RotateHead(0.0, -0.785)  # Look right
+time.sleep(1.0)
 
-# Test head movement (slower, safer in DEBUG mode)
-booster.RotateHead(0.0, 0.785)  # Moves slower than in PREP
-time.sleep(2.0)  # More time to observe
-
-# Perfect for:
-# - Face detection testing (slow scan to verify camera coverage)
-# - Voice interaction development (smooth, predictable movements)
-# - Camera alignment (easy to see what Zod camera captures)
-# - Learning the system (safer for first-time testing)
-
-# Return to normal speed
-booster.ChangeMode(RobotMode.kPrepare)
+booster.RotateHead(0.0, 0.0)  # Center
 ```
 
-**TEACH Mode for Manual Positioning** (for calibration and finding optimal angles):
+**Movement Control**:
+
+For walking/navigation, use **WALKING mode**:
 ```python
-# Enable TEACH mode - motors allow manual positioning
-booster.ChangeMode(RobotMode.kTeach)
-time.sleep(0.5)
+# Enable walking mode
+booster.ChangeMode(RobotMode.kWalking)
+time.sleep(1.0)
 
-# Now you can manually move Twiki's head with minimal resistance
-# Perfect for:
-# 1. Finding optimal camera angles for face detection
-#    - Move head to position where Zod camera sees faces clearly
-#    - Check camera feed while adjusting position
-# 2. Testing physical range of motion
-#    - Verify yaw ±60° and pitch -30° to 45° limits
-# 3. Recording ideal scan positions for autonomous exploration
-#    - Manually position, note the angles, use in scan pattern
-# 4. Calibrating home position
-#    - Ensure "center" (0, 0) is actually centered
+# Locomotion commands (from basic_controls.py example)
+booster.Move(0.2, 0.0, 0.0)  # Forward at 0.2 m/s
+time.sleep(2.0)
 
-# Example workflow:
-# 1. Enable TEACH mode
-# 2. Open camera feed: http://192.168.x.x:8080
-# 3. Manually move head while watching feed
-# 4. When you find good position, record it:
-#    - Read position (if SDK provides GetHeadPosition())
-#    - Or estimate angles visually
-# 5. Use these positions in your scan pattern
+booster.Move(0.0, 0.0, 0.5)  # Rotate at 0.5 rad/s
+time.sleep(2.0)
 
-# Return to active control
-booster.ChangeMode(RobotMode.kPrepare)
+booster.Move(0.0, 0.0, 0.0)  # Stop
+```
+
+**Safe Shutdown**:
+```python
+# Always return to DAMPING mode when done
+booster.ChangeMode(RobotMode.kDamping)
 ```
 
 ## Troubleshooting
@@ -655,8 +639,8 @@ model = YOLO('yolov8m.pt')
 ```python
 # Emergency stop pattern
 def emergency_stop(booster):
-    booster.ChangeMode(RobotMode.kDamp)
-    print("EMERGENCY STOP - Robot in DAMP mode")
+    booster.ChangeMode(RobotMode.kDamping)
+    print("EMERGENCY STOP - Robot in DAMPING mode")
 ```
 
 ## Next Steps
