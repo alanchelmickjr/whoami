@@ -11,9 +11,14 @@
 
 ### F5-TTS Voice Options
 
-**Option 1: Use Pre-Recorded Child Voice (Recommended)**
+**Size-Appropriate Voice Selection:**
 
-F5-TTS repository includes sample voices. Download a child-appropriate reference:
+K-1 is 95cm tall (child-sized). Voice pitch should match physical size:
+- Smaller bodies = naturally higher voice pitch
+- Adult voices from smaller-statured people work great
+- Pitch range: 180-250 Hz (vs typical adult male 85-180 Hz)
+
+**Option 1: Use Pre-Recorded Small-Statured Voice (Recommended)**
 
 ```bash
 # SSH to K-1
@@ -22,28 +27,34 @@ ssh booster@192.168.x.x
 # Create voice directory
 sudo mkdir -p /opt/whoami/voices
 
-# Download sample child/teen voice from F5-TTS samples
-# (Check F5-TTS repo for demo voices)
-# OR use any child voice clip from public domain sources
+# Use voice from:
+# - Smaller-statured adults (naturally higher pitch)
+# - Teens (13-17 years)
+# - Public domain voice samples
+# - F5-TTS demo voices
 
-# Example using a higher-pitched public domain sample:
+# Download or copy sample:
 cd /opt/whoami/voices
-wget https://example.com/child_voice_sample.wav -O k1_child_voice.wav
+# (place your 10-sec WAV file here)
+mv your_sample.wav k1_voice.wav
 ```
 
-**Option 2: Pitch-Shift Existing Voice**
+**Option 2: Pitch-Shift Any Voice**
 
-If no child samples available, pitch-shift an adult voice:
+Make any voice size-appropriate:
 
 ```bash
 # Install sox
 sudo apt-get install sox
 
-# Record adult voice (10 sec)
-arecord -D hw:2,0 -f S16_LE -r 48000 -c 2 -d 10 /tmp/adult_voice.wav
+# Record base voice (10 sec)
+arecord -D hw:2,0 -f S16_LE -r 48000 -c 2 -d 10 /tmp/base_voice.wav
 
-# Pitch up by 400 cents (4 semitones = child-like)
-sox /tmp/adult_voice.wav /opt/whoami/voices/k1_child_voice.wav pitch 400
+# Pitch up by 300-500 cents (3-5 semitones)
+# 300 = slight higher pitch (smaller adult)
+# 400 = noticeably higher (petite adult)
+# 500 = very high pitch (very small stature)
+sox /tmp/base_voice.wav /opt/whoami/voices/k1_voice.wav pitch 400
 
 # Reference text (have speaker say this):
 # "Hello! I'm K-1, a friendly robot helper."
@@ -54,11 +65,11 @@ sox /tmp/adult_voice.wav /opt/whoami/voices/k1_child_voice.wav pitch 400
 Use another TTS to generate reference:
 
 ```bash
-# Use espeak to generate base voice
-espeak "Hello, I am K-1, a friendly robot helper" -w /tmp/base.wav -s 180 -p 60
+# Use espeak to generate base voice with higher pitch
+espeak "Hello, I am K-1, a friendly robot helper" -w /tmp/base.wav -s 180 -p 70
 
-# Pitch shift
-sox /tmp/base.wav /opt/whoami/voices/k1_child_voice.wav pitch 300
+# Pitch shift to match small body
+sox /tmp/base.wav /opt/whoami/voices/k1_voice.wav pitch 300
 ```
 
 **Update Config:**
@@ -67,7 +78,7 @@ sox /tmp/base.wav /opt/whoami/voices/k1_child_voice.wav pitch 300
 nano /home/user/whoami/config/k1_booster_config.json
 
 # Update lines 97-98:
-"ref_audio": "/opt/whoami/voices/k1_child_voice.wav",
+"ref_audio": "/opt/whoami/voices/k1_voice.wav",
 "ref_text": "Hello! I'm K-1, a friendly robot helper.",
 ```
 
@@ -187,7 +198,7 @@ nano /home/user/whoami/config/k1_booster_config.json
 
 2. **Verify Voice File**
    ```bash
-   ls -lh /opt/whoami/voices/k1_child_voice.wav
+   ls -lh /opt/whoami/voices/k1_voice.wav
 
    # Should show file size ~500KB-2MB for 10 sec audio
    ```
@@ -195,20 +206,20 @@ nano /home/user/whoami/config/k1_booster_config.json
 3. **Test Voice**
    ```bash
    python examples/f5tts_voice_demo.py \
-     --ref-audio /opt/whoami/voices/k1_child_voice.wav \
+     --ref-audio /opt/whoami/voices/k1_voice.wav \
      --ref-text "Hello! I'm K-1, a friendly robot helper."
    ```
 
 4. **Listen to Output**
    ```
    - Script will speak 3 test phrases
-   - Verify child-appropriate voice tone
+   - Verify size-appropriate voice tone (higher pitch for 95cm body)
    - Check for clarity and naturalness
    ```
 
 **Expected Results:**
 - ✅ Voice sounds natural (not robotic)
-- ✅ Child-appropriate pitch
+- ✅ Size-appropriate pitch (matches small stature)
 - ✅ Clear pronunciation
 - ✅ Generation time < 3 seconds per phrase
 
@@ -343,7 +354,7 @@ send_command('ho')  # Center
 **Issue 1: F5-TTS "No reference audio" error**
 ```bash
 # Check file exists
-ls -lh /opt/whoami/voices/k1_child_voice.wav
+ls -lh /opt/whoami/voices/k1_voice.wav
 
 # Verify config path matches
 cat config/k1_booster_config.json | grep ref_audio
@@ -372,8 +383,9 @@ sudo systemctl restart zed-camera  # If using ZED
 After successful testing:
 
 1. **Optimize Voice:**
-   - Fine-tune pitch shift amount
-   - Test different reference samples
+   - Fine-tune pitch shift (test 300, 400, 500 cents)
+   - Try voices from smaller-statured adults
+   - Test different reference samples (male vs female pitch ranges)
    - Adjust speaking rate in config
 
 2. **Dance Choreography:**
@@ -399,7 +411,8 @@ After successful testing:
 - Reference audio quality (background noise affects output)
 - Reference text accuracy (must match what's spoken)
 - Sample length (10 sec minimum, 30 sec ideal)
-- Voice characteristics (children's voices work better with child speakers)
+- Voice pitch matching robot size (higher pitch for 95cm K-1)
+- Natural speaking voice samples work best (avoid shouting/whispering)
 
 **Autonomous Behavior Observations:**
 - Head scan pattern efficiency
