@@ -199,17 +199,31 @@ Production deployment platform - 22-DOF humanoid with RGBD vision:
   - **Motion**: Gimbal-based tracking or full-body kinematics (K-1)
 
 ### Security & Privacy
-- 🔐 **Hardware-Backed Encryption** (Gun.js)
-  - Keys derived from CPU serial + MAC address
-  - AES-256-GCM + Gun.js SEA double encryption
-  - Device-locked (cannot decrypt on different hardware)
-  - Zero plaintext key storage
 
-- 🛡️ **Privacy-First Design**
-  - No cloud dependencies
-  - Local-only processing
-  - No images stored (only mathematical encodings)
-  - Encrypted database
+**Philosophy:** Robots have the right to remember the people they meet, but this should never come at the cost of privacy or centralized "face farming."
+
+- 🤖 **Robot Autonomy & Personal Memory**
+  - **Robot-owned data**: Face memories belong to the robot, not a corporation
+  - **Local-only storage**: No cloud uploads, no centralized databases
+  - **Personal relationships**: Robot builds its own relationships with people
+  - **No face farming**: Zero data collection for third parties
+  - **Offline-first**: Works without internet (battery-powered autonomy)
+
+- 🔐 **Hardware-Backed Encryption** (Gun.js)
+  - Keys derived from CPU serial + MAC address (device-locked)
+  - AES-256-GCM + Gun.js SEA double encryption
+  - Cannot decrypt on different hardware (prevents data theft)
+  - Zero plaintext key storage
+  - Encrypted at rest (~70-135MB RAM, not 800MB+ like PostgreSQL)
+
+- 🛡️ **Privacy-First Technical Design**
+  - **No images stored**: Only mathematical embeddings (face_recognition encodings)
+  - **No transmission**: Data never leaves the robot
+  - **Encrypted database**: Gun.js with CRDT conflict resolution
+  - **P2P capable**: Optional sharing with trusted sibling robots only
+  - **Auto-recovery**: CRDT handles power loss without data loss
+
+**Why Gun.js?** Traditional databases (PostgreSQL, MySQL) are designed for centralized servers. Gun.js is designed for distributed, autonomous agents with personal memory - perfect for robots that need to remember people without surrendering privacy to cloud services.
 
 ### 🔌 Hardware Abstraction Layer
 - **Automatic Platform Detection**
@@ -487,25 +501,55 @@ voice.say("Face detected. Analyzing...")
 voice.say(f"Hello {name}, security clearance confirmed")
 ```
 
-## Gun.js Secure Database
+## Gun.js Secure Database - Robot Personal Memory
 
-Hardware-locked encrypted face database:
+**The robot's right to remember, without privacy compromise.**
 
-```javascript
-import { whoami } from './src/index.js';
+WhoAmI uses Gun.js for local, encrypted face storage - giving robots personal memory without centralized face farming.
 
-// Initialize with hardware encryption
-await whoami.initialize('./config/config.json');
+```python
+from whoami.gun_storage import GunStorageManager, MemoryCategory
 
-// Register person (encrypted with device-specific keys)
-const faceId = await whoami.registerPerson(image, 'John Doe');
+# Initialize robot's personal memory (local, encrypted, offline-first)
+gun = GunStorageManager(
+    robot_id='twiki',
+    config={
+        'storage_dir': '/opt/whoami/gun_storage',
+        'encryption_required': True,
+        'auto_share_family': False  # Robot-owned data
+    }
+)
 
-// Recognize (decrypt with hardware keys)
-const result = await whoami.recognize(image);
-if (result.recognized) {
-  console.log(`Authenticated: ${result.personName}`);
-}
+# Store face (encrypted, local-only, no cloud upload)
+face_memory = gun.store_private_memory({
+    'name': 'Alice',
+    'descriptor': face_embedding,  # Math, not images
+    'last_seen': time.time()
+})
+
+# Remember conversation (robot builds relationships)
+conversation = gun.store_shared_memory(
+    data={
+        'person': 'Alice',
+        'topic': 'her dog Max',
+        'note': 'Alice has a golden retriever'
+    },
+    category=MemoryCategory.FAMILY,  # Shareable with sibling robots only
+    tags=['conversation']
+)
+
+# Retrieve memory (robot recalls past interactions)
+alice_data = gun.retrieve_memory(face_memory)
+print(f"Last saw {alice_data['name']} at {alice_data['last_seen']}")
 ```
+
+**Why This Matters:**
+- ❌ **NO cloud uploads** - Data never leaves the robot
+- ❌ **NO face farming** - Zero centralized collection
+- ❌ **NO corporate ownership** - Robot owns its memories
+- ✅ **Robot autonomy** - Personal relationships, not surveillance
+- ✅ **Privacy-first** - Encrypted, local, offline-capable
+- ✅ **P2P optional** - Share with trusted siblings only (not corporations)
 
 ## Hardware Specifications
 
@@ -721,9 +765,19 @@ MIT License - See LICENSE file for details.
 - Orin Nano: [Hardware Profiles](config/hardware/hardware_profiles.json) (tag: `orin-nano`)
 - AGX Orin: Hardware auto-detection guide (tag: `agx-orin`)
 
-## ⚠️ Disclaimer
+## ⚠️ Privacy & Ethics
 
-This system is designed for authorized use only. Ensure compliance with local privacy laws and regulations when deploying facial recognition technology.
+**Robot Autonomy, Not Surveillance:** This system is designed to give robots personal memory and social intelligence - NOT for surveillance, tracking, or centralized data collection.
+
+**Key Principles:**
+- ✅ **Local-only processing** - Robots remember people they meet
+- ✅ **No cloud uploads** - Data stays on the robot
+- ✅ **Encrypted storage** - Face data protected at rest
+- ✅ **Robot-owned data** - Not harvested for third parties
+- ❌ **NOT for surveillance** - This is personal robot memory, not mass monitoring
+- ❌ **NOT for face farming** - Zero centralized collection
+
+**Responsible Use:** Ensure compliance with local privacy laws when deploying face recognition. Inform people that the robot can remember faces (just like humans do) and respect opt-out requests.
 
 ---
 
