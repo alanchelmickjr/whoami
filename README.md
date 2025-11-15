@@ -215,6 +215,7 @@ Production deployment platform - 22-DOF humanoid with RGBD vision:
   - Cannot decrypt on different hardware (prevents data theft)
   - Zero plaintext key storage
   - Encrypted at rest (~70-135MB RAM, not 800MB+ like PostgreSQL)
+  - **Complete Gun.js implementation documented**: See [Gun.js Storage Guide](docs/GUN_JS_STORAGE.md)
 
 - 🛡️ **Privacy-First Technical Design**
   - **No images stored**: Only mathematical embeddings (face_recognition encodings)
@@ -222,8 +223,11 @@ Production deployment platform - 22-DOF humanoid with RGBD vision:
   - **Encrypted database**: Gun.js with CRDT conflict resolution
   - **P2P capable**: Optional sharing with trusted sibling robots only
   - **Auto-recovery**: CRDT handles power loss without data loss
+  - **Privacy opt-out**: People can decline being remembered (with friendly explanation)
 
 **Why Gun.js?** Traditional databases (PostgreSQL, MySQL) are designed for centralized servers. Gun.js is designed for distributed, autonomous agents with personal memory - perfect for robots that need to remember people without surrendering privacy to cloud services.
+
+**📚 Full Gun.js Documentation**: All JavaScript files, architecture, security features, and setup instructions are documented in [docs/GUN_JS_STORAGE.md](docs/GUN_JS_STORAGE.md)
 
 ### 🔌 Hardware Abstraction Layer
 - **Automatic Platform Detection**

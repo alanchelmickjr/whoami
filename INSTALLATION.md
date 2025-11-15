@@ -87,6 +87,7 @@ Complete installation including all features:
 - ✅ Camera permissions and drivers
 - ✅ Python virtual environment
 - ✅ Face recognition libraries
+- ✅ Gun.js storage (hardware-backed encryption) - See [Gun.js Storage Guide](docs/GUN_JS_STORAGE.md)
 - ✅ 3D scanning support (Open3D, trimesh)
 - ✅ Gimbal control (pyserial)
 - ✅ Robot brain and learning systems
