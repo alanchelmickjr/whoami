@@ -23,10 +23,15 @@ trimesh>=4.0.0  # Advanced mesh operations, STL export, tool generation
 pyserial>=3.5  # Serial communication for servo control
 
 # Voice Interaction (for K-1)
-pyttsx3>=2.90  # Text-to-speech
+pyttsx3>=2.90  # Text-to-speech (basic, fallback)
 SpeechRecognition>=3.10.0  # Speech recognition
 sounddevice>=0.4.6  # Audio input/output
 vosk>=0.3.45  # Offline speech recognition (optional)
+
+# F5-TTS (high-quality neural TTS with voice cloning)
+f5-tts>=1.0.0  # Flow-based TTS with voice cloning
+torch>=2.0.0  # PyTorch for F5-TTS
+torchaudio>=2.0.0  # Audio processing for F5-TTS
 
 # K-1 Arm Control (ROS2)
 # NOTE: ROS2 packages (rclpy, sensor_msgs, trajectory_msgs) are typically
