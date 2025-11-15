@@ -373,10 +373,56 @@ class VoiceInteraction:
             logger.error(f"Vosk recognition error: {e}")
             return None
 
+    def ask_for_consent(self, prompt: Optional[str] = None) -> bool:
+        """
+        Ask if person wants to be remembered (opt-in for privacy)
+
+        Args:
+            prompt: Custom prompt to use
+
+        Returns:
+            True if person consents to be remembered, False if they opt out
+        """
+        if prompt is None:
+            prompt = "Would you like me to remember you for next time? Say yes or no."
+
+        response = self.listen(prompt=prompt, timeout=7.0, phrase_time_limit=3.0)
+
+        if response:
+            response_lower = response.lower()
+            # Check for affirmative responses
+            if any(word in response_lower for word in ['yes', 'yeah', 'yep', 'sure', 'okay', 'ok']):
+                return True
+            # Check for negative responses
+            elif any(word in response_lower for word in ['no', 'nope', 'nah', 'not', "don't"]):
+                # Friendly opt-out message
+                self.say("Sure no problem, just remember I won't know you next time I see you so I will ask the same things again! :D")
+                return False
+
+        # If unclear, ask again once
+        clarify = self.listen(
+            prompt="Sorry, I didn't catch that. Do you want me to remember you? Yes or no?",
+            timeout=7.0,
+            phrase_time_limit=3.0
+        )
+
+        if clarify:
+            clarify_lower = clarify.lower()
+            if any(word in clarify_lower for word in ['yes', 'yeah', 'yep', 'sure', 'okay', 'ok']):
+                return True
+            elif any(word in clarify_lower for word in ['no', 'nope', 'nah', 'not', "don't"]):
+                self.say("Sure no problem, just remember I won't know you next time I see you so I will ask the same things again! :D")
+                return False
+
+        # Default to not remembering if unclear (privacy-first)
+        self.say("I'll ask you again next time!")
+        return False
+
     def ask_name(
         self,
         prompt: Optional[str] = None,
-        max_attempts: int = 3
+        max_attempts: int = 3,
+        ask_consent: bool = True
     ) -> Optional[str]:
         """
         Ask for a person's name and return the response
@@ -384,10 +430,18 @@ class VoiceInteraction:
         Args:
             prompt: Custom prompt to use (default: "What's your name?")
             max_attempts: Maximum number of attempts to recognize speech
+            ask_consent: Ask for consent before remembering (default: True)
 
         Returns:
-            Recognized name, or None if failed
+            Recognized name if consent given, or None if failed/opted out
         """
+        # Ask for consent first (privacy-first design)
+        if ask_consent:
+            if not self.ask_for_consent():
+                # Person opted out of being remembered
+                logger.info("Person opted out of being remembered")
+                return None
+
         if prompt is None:
             prompt = "What's your name?"
 

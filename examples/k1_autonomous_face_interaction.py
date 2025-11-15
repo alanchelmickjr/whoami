@@ -135,21 +135,22 @@ class AutonomousFaceInteraction:
         self.recently_greeted[name] = current_time
 
     def ask_for_name(self):
-        """Ask unknown person for their name"""
+        """Ask unknown person for their name (with privacy opt-out)"""
         print("\n🤖 K-1: Hello! I don't think we've met before.")
         self.voice.say("Hello! I don't think we've met before.")
         time.sleep(0.5)
 
-        print("🤖 K-1: What's your name?")
-        name = self.voice.ask_name(prompt="What's your name?", max_attempts=3)
+        # ask_name() now includes consent check by default
+        name = self.voice.ask_name(max_attempts=3, ask_consent=True)
 
         if name:
             print(f"✓ Learned name: {name}")
             self.greet_person(name)
             return name
-
-        print("✗ Could not learn name")
-        return None
+        else:
+            # Person either opted out or recognition failed
+            print("✗ Person opted out or recognition failed")
+            return None
 
     def scan_and_interact(self):
         """Scan for faces and interact"""
