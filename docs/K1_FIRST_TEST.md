@@ -146,6 +146,73 @@ nano /home/user/whoami/config/k1_booster_config.json
 
 ---
 
+### Test 1.5: DEBUG & TEACH Modes (RECOMMENDED)
+
+**Objective:** Use safer modes for testing and calibration
+
+**Why Use These Modes:**
+- **DEBUG**: Slower, safer movements - perfect for first tests
+- **TEACH**: Manual positioning - find optimal camera angles
+
+**Steps:**
+
+1. **Enable DEBUG Mode** (Safer Testing)
+   ```
+   Type: md    # DEBUG mode (check your control script for command)
+   # Or use Python:
+   # booster.ChangeMode(RobotMode.kDebug)
+   ```
+
+2. **Test Head Movement in DEBUG** (Slower, Safer)
+   ```
+   ho - Head center (slow movement)
+   hl - Head left (slow - easier to observe)
+   hr - Head right
+   hu - Head up
+   hd - Head down
+   ho - Return to center
+   ```
+
+   **Benefits:**
+   - Movements are SLOWER - easier to see camera tracking
+   - SAFER - reduced torque, less risk of damage
+   - Better for learning system behavior
+
+3. **Enable TEACH Mode** (Manual Positioning)
+   ```
+   Type: mt    # TEACH mode (check your control script)
+   # Or use Python:
+   # booster.ChangeMode(RobotMode.kTeach)
+   ```
+
+4. **Manual Camera Angle Calibration**
+   ```
+   # In another terminal, view camera:
+   python basic_cam.py
+   # Access: http://192.168.x.x:8080
+
+   # Now manually move Twiki's head while watching camera feed:
+   # - Find angles where camera sees faces clearly
+   # - Test full range of motion (yaw ±60°, pitch -30° to 45°)
+   # - Note optimal positions for face scanning
+   # - Verify "home" position (0,0) is centered
+   ```
+
+5. **Return to Normal Mode**
+   ```
+   Type: mp    # Back to PREP mode
+   ```
+
+**Expected Results:**
+- ✅ DEBUG mode: Movements are noticeably slower and smoother
+- ✅ TEACH mode: Can manually position head with minimal resistance
+- ✅ Camera feed visible while adjusting head position
+- ✅ Identified optimal angles for face detection
+
+**Pro Tip:** Use TEACH mode + camera feed to find the best scan positions for autonomous face exploration!
+
+---
+
 ### Test 2: Vision System
 
 **Objective:** Verify camera and face detection
