@@ -326,7 +326,7 @@ class VoiceInteraction:
             self.stats['recognition_failures'] += 1
             return None
 
-    def _recognize_google(self, audio: sr.AudioData) -> Optional[str]:
+    def _recognize_google(self, audio: 'sr.AudioData') -> Optional[str]:
         """Recognize speech using Google Speech Recognition (online)"""
         try:
             text = self.recognizer.recognize_google(audio)
@@ -338,7 +338,7 @@ class VoiceInteraction:
             logger.error(f"Google Speech Recognition error: {e}")
             return None
 
-    def _recognize_vosk(self, audio: sr.AudioData) -> Optional[str]:
+    def _recognize_vosk(self, audio: 'sr.AudioData') -> Optional[str]:
         """Recognize speech using Vosk (offline)"""
         if not self.vosk_model:
             logger.error("Vosk model not loaded")

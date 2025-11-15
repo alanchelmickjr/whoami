@@ -29,9 +29,9 @@ sounddevice>=0.4.6  # Audio input/output
 vosk>=0.3.45  # Offline speech recognition (optional)
 
 # F5-TTS (high-quality neural TTS with voice cloning)
-f5-tts>=1.0.0  # Flow-based TTS with voice cloning
-torch>=2.0.0  # PyTorch for F5-TTS
-torchaudio>=2.0.0  # Audio processing for F5-TTS
+# NOTE: On Jetson, torch and torchaudio come pre-installed with JetPack (CUDA-enabled)
+# DO NOT install torch/torchaudio via pip on Jetson - it will break CUDA support!
+# f5-tts>=1.0.0  # Disabled on Jetson - requires newer PyTorch than JetPack provides
 
 # K-1 Arm Control (ROS2)
 # NOTE: ROS2 packages (rclpy, sensor_msgs, trajectory_msgs) are typically
