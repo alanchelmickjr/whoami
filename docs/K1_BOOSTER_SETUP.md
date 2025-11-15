@@ -105,6 +105,38 @@ print('All imports OK!')
 "
 ```
 
+### 5. Set Up Gun.js Storage (Local Face/Conversation Database)
+
+```bash
+# Create storage directory for face recognition data
+sudo mkdir -p /opt/whoami/gun_storage
+sudo chown -R booster:booster /opt/whoami/gun_storage
+
+# Test Gun.js storage
+python3 -c "
+from whoami.gun_storage import GunStorageManager
+gun = GunStorageManager(robot_id='twiki', config={'storage_dir': '/opt/whoami/gun_storage'})
+print('Gun.js storage initialized!')
+print(gun.get_storage_stats())
+"
+```
+
+**Why Gun.js for K-1:**
+- **Offline-first**: Works without internet (critical for battery-powered robot)
+- **Low resource**: ~70-135MB RAM vs PostgreSQL's 800MB+
+- **Embedded**: No database daemon to manage
+- **P2P capable**: Future multi-robot sync when needed
+- **Auto-recovery**: CRDT handles power loss gracefully
+
+**Storage structure:**
+```
+/opt/whoami/gun_storage/
+├── twiki/
+│   ├── memories.db          # SQLite backend (face data, conversations)
+│   ├── .master.key          # Encryption key (permissions: 600)
+│   └── person_profiles.json # Face recognition profiles
+```
+
 ## Configuration
 
 ### 1. Review K-1 Config
@@ -349,6 +381,64 @@ voice = VoiceInteraction(
 
 voice.say("Hello, I am K-1!")
 ```
+
+### 4. Gun.js Storage with Face Recognition
+
+```python
+from whoami.gun_storage import GunStorageManager, MemoryCategory, TrustLevel
+import time
+
+# Initialize local storage (offline-first)
+gun = GunStorageManager(
+    robot_id='twiki',
+    config={
+        'storage_dir': '/opt/whoami/gun_storage',
+        'encryption_required': True,
+        'auto_share_family': False  # Keep private initially
+    }
+)
+
+# Store face recognition data (local, encrypted)
+face_memory = gun.store_private_memory({
+    'name': 'Alice',
+    'descriptor': face_embedding,  # From DeepFace
+    'last_seen': time.time(),
+    'encounter_count': 1
+})
+
+# Store conversation note (shareable with sibling robots)
+conversation = gun.store_shared_memory(
+    data={
+        'person': 'Alice',
+        'topic': 'her dog Max',
+        'note': 'Alice has a golden retriever who loves swimming',
+        'timestamp': time.time()
+    },
+    category=MemoryCategory.FAMILY,
+    tags=['conversation', 'pets']
+)
+
+# Retrieve memory later
+alice_data = gun.retrieve_memory(face_memory)
+print(f"Last saw {alice_data['name']} at {alice_data['last_seen']}")
+
+# Optional: Add sibling robot for P2P sync (when both on same network)
+# gun.add_peer('robi', '192.168.88.154', 8765, TrustLevel.SIBLING)
+# gun.share_with_sibling(conversation, 'robi')
+
+# Check storage stats
+stats = gun.get_storage_stats()
+print(f"Private memories: {stats['private_memories']}")
+print(f"Family memories: {stats['family_memories']}")
+print(f"Trusted peers: {stats['trusted_peers']}")
+```
+
+**Benefits for Twiki:**
+- **Works offline**: No internet needed for face recognition
+- **Low overhead**: ~70-135MB RAM (vs PostgreSQL ~800MB)
+- **Auto-encrypted**: Face data encrypted at rest
+- **Future-proof**: Easy P2P sync when you add more robots
+- **Battery-friendly**: Zero background workers draining power
 
 ## Robot Operational Modes
 
