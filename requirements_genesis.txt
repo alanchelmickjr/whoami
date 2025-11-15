@@ -18,8 +18,10 @@ genesis-world>=0.1.0
 # ============================================================================
 
 # PyTorch - For VLA model training
-torch>=2.0.0
-torchvision>=0.15.0
+# NOTE: On Jetson, torch and torchvision come pre-installed with JetPack (CUDA-enabled)
+# DO NOT install torch/torchvision via pip on Jetson - it will break CUDA support!
+# torch>=2.0.0  # Disabled on Jetson - use JetPack PyTorch instead
+# torchvision>=0.15.0  # Disabled on Jetson - use JetPack torchvision instead
 
 # ============================================================================
 # Vision-Language Models
