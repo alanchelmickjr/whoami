@@ -9,6 +9,27 @@
 
 Built by [Utiltiron](https://utiltiron.io) for creating intelligent, adaptive robotic systems on Jetson hardware.
 
+## 🎉 What's New - Latest Features
+
+### F5-TTS Neural Voice Integration
+- ✨ **High-quality neural TTS** replacing robotic espeak/pyttsx3
+- 🎤 **Voice cloning** from reference audio samples
+- 🔊 **Natural speech** that sounds human, not robotic
+- ⚡ **Offline inference** on Jetson Orin NX GPU
+- 📚 [Setup Guide](docs/F5-TTS_SETUP.md)
+
+### Autonomous Face Exploration
+- 🔍 **Autonomous head scanning** - 9-position pattern to find faces
+- 💬 **Conversation tracking** - "Last time we talked about your dog Max!"
+- ⏱️ **Time-aware greetings** - "It's been 2 hours since we last talked!"
+- 👥 **Person profiles** - JSON persistence with conversation history
+- 📚 [Full Guide](docs/K1_AUTONOMOUS_FACE_INTERACTION.md)
+
+### K-1 Integration Improvements
+- 🎮 **Booster SDK integration** - Head control via `RotateHead(pitch, yaw)`
+- 📡 **Network interface clarity** - `wlan0` works great for WiFi control
+- 🎯 **Simplified examples** - Matches working K-1 code patterns
+
 ## 🎯 Philosophy: Portable Intelligence
 
 WhoAmI is **software for robotic brains**, not tied to any single hardware platform. The system provides:
@@ -150,11 +171,26 @@ Production deployment platform - 22-DOF humanoid with RGBD vision:
   - Thread-safe operations across platforms
 
 - 🗣️ **Voice Interaction System**
-  - Natural conversation flow for name collection
-  - "Hello! I don't think we've met. What's your name?"
-  - Confirmation loop with yes/no validation
-  - Text-to-speech greetings and status updates
-  - Offline speech recognition (Vosk) or online (Google)
+  - **F5-TTS Neural Voice** (High-Quality TTS):
+    - Flow-based neural TTS with voice cloning
+    - Natural, human-like speech (vs robotic espeak)
+    - Zero-shot voice cloning from reference audio
+    - Offline inference on Jetson Orin NX
+    - Graceful fallback to pyttsx3
+  - **Conversational AI**:
+    - Natural conversation flow for name collection
+    - "Hello! I don't think we've met. What's your name?"
+    - Confirmation loop with yes/no validation
+    - Personalized greetings with time awareness
+    - "Hi Alice, it's been 2 hours since we last talked!"
+  - **Speech Recognition**:
+    - Offline speech recognition (Vosk) or online (Google)
+    - Voice command support
+  - **Conversation Tracking**:
+    - Remember and recall conversation topics
+    - "Last time we talked about your dog Max!"
+    - Person profiles with conversation history
+    - JSON persistence across sessions
 
 - 🎭 **Multi-Modal Sensing**
   - **Visual**: Face detection, tracking, recognition
@@ -204,31 +240,111 @@ Configurable operational modes (availability depends on platform):
 
 3. **🤖 Autonomous Mode**
    - Fully independent operation
+   - **Autonomous Face Exploration**:
+     - 9-position head scanning pattern
+     - Automatic face detection and recognition
+     - Proactive greeting of known people
+     - Name collection from unknown people
+   - **Conversation Memory**:
+     - Tracks time since last interaction
+     - Recalls previous conversation topics
+     - Person profile management
    - Audio status reporting
    - Self-guided interaction
-   - Monitoring via web interface
+   - Monitoring via web interface (port 8080)
 
 ## Quick Start (Any Jetson Platform)
 
-### Option A: K-1 Booster with YOLO (Recommended for K-1)
+### Option A: K-1 Booster Quick Start (Recommended)
+
+**1. Connect to K-1 via SSH**
 
 ```bash
-# Clone repository
-git clone https://github.com/alanchelmickjr/whoami.git
-cd whoami
+# Connect via WiFi (K-1's IP address)
+ssh booster@192.168.88.153
+# Password: 123456 (change this in production!)
+```
 
-# Run K-1 setup (includes YOLO + DeepFace + Voice)
-./k1_setup.sh
+**2. Navigate to Project**
 
-# Test the system
-python3 examples/k1_yolo_demo.py
+```bash
+cd /home/user/whoami
+```
+
+**3. Run Basic Robot Controls**
+
+```bash
+# Start robot control (choose your network interface)
+python basic_controls.py eth0    # Use wired Ethernet (recommended)
+# OR
+python basic_controls.py wlan0   # Use WiFi interface
+# OR
+python basic_controls.py lo      # Use loopback (testing only)
+```
+
+**Network Interface Explained:**
+- This parameter tells the **Booster SDK** which network interface to use for DDS/ROS2 communication
+- **NOT** the interface you used to SSH in!
+- Running ON the Jetson, the SDK needs to know which local interface to bind to
+- `eth0` = wired Ethernet (traditional choice)
+- `wlan0` = WiFi interface (**works great! tested with Xbox controller + laptop**)
+- `lo` = loopback (testing without network)
+
+**Note:** WiFi (`wlan0`) works perfectly fine for K-1 control including Xbox controller and laptop connectivity. Use whichever interface the K-1 is actually using for networking.
+
+**Controls:**
+```
+w/a/s/d/q/e - Movement (hold keys, release to stop)
+  w = forward, s = backward
+  a = left strafe, d = right strafe
+  q = rotate left, e = rotate right
+
+hd/hu/hr/hl - Head movement
+  hd = down, hu = up
+  hr = right, hl = left, ho = origin
+
+mp/md/mw - Robot modes
+  mp = Prepare (standing)
+  md = Damping (safe mode)
+  mw = Walking (active)
+```
+
+**4. Run Vision System with Face Detection**
+
+```bash
+# Start camera feed with YOLO face detection
+python cam_yolo.py --detection face --port 8080
+```
+
+Then open in browser: `http://192.168.88.153:8080`
+
+**5. Setup F5-TTS Voice (High-Quality Speech)**
+
+```bash
+# Record reference voice (10 seconds)
+sudo mkdir -p /opt/whoami/voices
+arecord -D hw:2,0 -f S16_LE -r 48000 -c 2 -d 10 /opt/whoami/voices/k1_default_voice.wav
+# Speak clearly: "This is the default voice for the K-1 robot."
+
+# Test F5-TTS
+python examples/f5tts_voice_demo.py
+```
+
+**6. Run Autonomous Face Interaction**
+
+```bash
+# Full autonomous system with conversation tracking
+python examples/k1_autonomous_face_interaction.py eth0
 ```
 
 **The K-1 will now:**
-- Detect faces using YOLO (GPU-accelerated)
-- Ask unknown people "What's your name?" via voice
-- Remember faces and greet known people
-- Display live video with face annotations
+- ✅ Scan environment autonomously (head moves in 9-position pattern)
+- ✅ Detect faces using YOLO (GPU-accelerated on Jetson)
+- ✅ Ask unknown people "What's your name?" via F5-TTS voice
+- ✅ Remember faces and greet known people
+- ✅ Announce time since last conversation
+- ✅ Recall conversation topics ("Last time we talked about your dog Max!")
+- ✅ Track conversations in person profiles (JSON persistence)
 
 ### Option B: Standard Installation (All Platforms)
 
