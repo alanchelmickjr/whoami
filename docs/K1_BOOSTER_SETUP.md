@@ -1,462 +1,524 @@
-# K-1 Booster Setup Guide
+# K-1 Booster Robot Setup Guide
 
-Complete setup guide for Jetson Orin NX on K-1 Booster carrier board with head/neck gimbal system and audio capabilities.
+Complete setup guide for running WhoAmI on the K-1 humanoid robot from Booster Robotics.
 
 ## Overview
 
-The K-1 booster configuration provides:
-- **Dual Gimbal System**: Separate head (tilt) and neck (tilt) control
-- **Audio I/O**: Voice reporting, audio tracking, and speech recognition
-- **Remote Access**: VNC and direct access for operator control
-- **Expanded I/O**: Dual Ethernet, additional USB, M.2 slots
+The K-1 is a 95cm tall commercial humanoid robot with:
+- **Jetson Orin NX 16GB** (pre-installed by Booster)
+- **Built-in motors** controlled via Booster SDK (DDS/ROS2)
+- **2-DoF head control**: yaw ±60°, pitch -30° to 45°
+- **18-DoF total**: Arms, legs, head movement
+- **Zod camera** for vision (USB 3.0)
+- **Audio I/O** for voice interaction
 
-## Hardware Requirements
+**Important**: K-1 uses the Booster SDK for all motor control. No external servos or serial connections needed - everything is controlled via DDS (Fast-DDS/ROS2).
 
-### Core Components
-- Jetson Orin NX 16GB module
-- K-1 Booster carrier board
-- Power supply: 19V, 65W minimum
-- OAK-D Series 3 camera with USB 3.0 cable
+## Prerequisites
 
-### Gimbal System
-- Head Gimbal (1-axis):
-  - 1x Feetech STS/SCS servo for tilt (up/down)
-  - Serial connection to `/dev/ttyTHS1`
-- Neck Gimbal (1-axis):
-  - 1x Feetech STS/SCS servo for neck tilt (forward/back nod)
-  - Serial connection to `/dev/ttyTHS2`
-- Total: 2-axis gimbal system (head tilt, neck tilt)
+Your K-1 should come with:
+- JetPack 5.x pre-installed
+- Booster SDK installed (check with `python3 -c "import booster_robotics_sdk_python"`)
+- Network connectivity (WiFi or Ethernet)
+- SSH access enabled
 
-### Audio System
-- USB audio interface (recommended: USB Audio Class 2.0)
-- Microphone for voice input and audio tracking
-- Speaker or headphone output for voice reporting
+## Initial Connection
 
-### Network
-- Ethernet cable (primary connection)
-- Optional: Second Ethernet for redundancy
-- Optional: WiFi module for backup connectivity
+### 1. Find K-1 IP Address
 
-## Initial Setup
-
-### 1. Flash JetPack
-
-Flash JetPack 5.1.2 or later to the Orin NX:
-
+Check your router or use network scan:
 ```bash
-# Use NVIDIA SDK Manager or command line
-sudo ./flash.sh jetson-orin-nx-devkit mmcblk0p1
+# From your computer
+nmap -sn 192.168.x.0/24 | grep -i jetson
 ```
 
-### 2. First Boot Configuration
+### 2. SSH to K-1
+
+```bash
+# Default credentials (change after first login!)
+ssh booster@192.168.x.x
+```
+
+### 3. Verify Booster SDK
+
+```bash
+# Check SDK is installed
+python3 -c "from booster_robotics_sdk_python import B1LocoClient, ChannelFactory; print('Booster SDK OK')"
+```
+
+If not installed, contact Booster Robotics support.
+
+## WhoAmI Installation
+
+### 1. Clone Repository
+
+```bash
+cd ~
+git clone https://github.com/alanchelmickjr/whoami.git
+cd whoami
+```
+
+### 2. Install System Dependencies
 
 ```bash
 # Update system
 sudo apt update && sudo apt upgrade -y
 
-# Install essential packages
+# Install essentials
 sudo apt install -y \
     python3-pip \
+    python3-venv \
     git \
-    vim \
-    htop \
-    net-tools \
-    usbutils \
-    pulseaudio \
-    pulseaudio-utils \
-    alsa-utils
-
-# Configure serial ports
-sudo usermod -a -G dialout $USER
-sudo chmod 666 /dev/ttyTHS0 /dev/ttyTHS1 /dev/ttyTHS2
+    portaudio19-dev \
+    libsndfile1 \
+    ffmpeg \
+    sox \
+    espeak-ng \
+    alsa-utils \
+    pulseaudio
 ```
 
-### 3. Configure Hardware Detection
+### 3. Install Python Dependencies
 
 ```bash
-# Clone WhoAmI repository
-cd ~
-git clone https://github.com/yourusername/whoami.git
-cd whoami
+# Create virtual environment (optional but recommended)
+python3 -m venv ~/whoami_env
+source ~/whoami_env/bin/activate
 
-# Set hardware profile
-export WHOAMI_HARDWARE_PROFILE="jetson_orin_nx_k1"
-echo 'export WHOAMI_HARDWARE_PROFILE="jetson_orin_nx_k1"' >> ~/.bashrc
+# Install WhoAmI
+cd ~/whoami
+pip install -e .
 
-# Verify detection
-python3 -m whoami.hardware_detector
+# Install requirements
+pip install -r requirements.txt
 ```
 
-Expected output:
-```
-=== Hardware Detection ===
-Detected Hardware: Jetson Orin NX on K-1 Booster
-Profile Name: jetson_orin_nx_k1
-Module: orin_nx
-Carrier: k1_booster
-
-=== Peripherals ===
-Serial Port: /dev/ttyTHS1
-Available Serial Ports: ['/dev/ttyTHS0', '/dev/ttyTHS1', '/dev/ttyTHS2']
-GPIO Chip: gpiochip1
-I2C Buses: [0, 2, 8]
-
-=== Gimbal Configuration ===
-Type: head_neck_dual
-Head Gimbal Port: /dev/ttyTHS1
-Head Gimbal Axes: tilt
-Neck Gimbal Port: /dev/ttyTHS2
-Neck Gimbal Axes: neck_tilt
-
-=== Audio Configuration ===
-Input Device: hw:2,0
-Output Device: hw:2,0
-Sample Rate: 48000Hz
-Supported Features: voice_reporting, audio_tracking, speech_synthesis, voice_commands
-
-=== Remote Access ===
-VNC Enabled: True
-VNC Port: 5900
-Direct HDMI: True
-Resolution: 1920x1080
-```
-
-## Gimbal System Setup
-
-### 1. Wire Head Gimbal to ttyTHS1
-
-Connect Feetech servo:
-- Servo 1 (Tilt): ID 1
-- Baudrate: 1Mbps
-- Serial: `/dev/ttyTHS1`
-
-### 2. Wire Neck Gimbal to ttyTHS2
-
-Connect Feetech servo:
-- Servo 2 (Neck Tilt): ID 2
-- Baudrate: 1Mbps
-- Serial: `/dev/ttyTHS2`
-
-### 3. Test Gimbal Systems
+### 4. Verify Installation
 
 ```bash
-# Test head gimbal
+# Test imports
 python3 -c "
-from whoami.feetech_sdk import FeetchController
-head = FeetchController('/dev/ttyTHS1', 1000000)
-head.ping(1)  # Ping tilt servo
-print('Head gimbal OK')
-"
-
-# Test neck gimbal
-python3 -c "
-from whoami.feetech_sdk import FeetchController
-neck = FeetchController('/dev/ttyTHS2', 1000000)
-neck.ping(2)  # Ping neck tilt servo
-print('Neck gimbal OK')
+from booster_robotics_sdk_python import B1LocoClient, ChannelFactory, RobotMode
+from whoami.yolo_face_recognition import K1FaceRecognitionSystem
+from whoami.voice_interaction import VoiceInteraction
+print('All imports OK!')
 "
 ```
 
-### 4. Calibrate Servos
+## Configuration
+
+### 1. Review K-1 Config
 
 ```bash
-# Use K-1 configuration
-python3 -m whoami.calibrate_servos --config config/k1_booster_config.json
+cat config/k1_booster_config.json
 ```
 
-## Audio System Setup
+Key settings:
+```json
+{
+  "voice_reporting": {
+    "enabled": true,
+    "engine": "f5-tts",
+    "fallback_engine": "pyttsx3"
+  },
+  "face_recognition": {
+    "enabled": true,
+    "model": "yolov8n.pt",
+    "face_db_path": "data/face_db.pkl"
+  }
+}
+```
 
-### 1. Connect USB Audio Interface
+### 2. Network Interface Selection
+
+The Booster SDK needs a network interface for DDS communication:
+
+- **`127.0.0.1`** - Loopback (local testing only)
+- **`eth0`** - Wired Ethernet (initial setup, tethered)
+- **`wlan0`** - WiFi (wireless operation, tested with Xbox controller)
+
+**Note**: This is for SDK's internal DDS communication, NOT for SSH!
+
+## Basic Testing
+
+### 1. Test Robot Connection
+
+```python
+# test_connection.py
+from booster_robotics_sdk_python import B1LocoClient, ChannelFactory, RobotMode
+import time
+
+# Initialize SDK
+# Use '127.0.0.1' for local testing, 'wlan0' for wireless, 'eth0' for wired
+ChannelFactory.Instance().Init(0, '127.0.0.1')
+
+booster = B1LocoClient()
+booster.Init()
+
+# Check robot state
+print("Robot connected!")
+print(f"Battery: {booster.GetBatteryPercentage()}%")
+
+# Test mode change
+print("Changing to PREP mode...")
+booster.ChangeMode(RobotMode.kPrepare)
+time.sleep(2)
+
+print("Test complete!")
+```
+
+Run:
+```bash
+python3 test_connection.py
+```
+
+### 2. Test Head Movement
+
+```python
+# test_head.py
+from booster_robotics_sdk_python import B1LocoClient, ChannelFactory, RobotMode
+import time
+
+ChannelFactory.Instance().Init(0, '127.0.0.1')
+booster = B1LocoClient()
+booster.Init()
+
+# Must be in PREP or WALK mode for head control
+booster.ChangeMode(RobotMode.kPrepare)
+time.sleep(2)
+
+print("Testing head movement...")
+
+# Center
+booster.RotateHead(0.0, 0.0)
+time.sleep(1)
+
+# Look left
+booster.RotateHead(0.0, 0.785)  # 45° yaw
+time.sleep(1)
+
+# Look right
+booster.RotateHead(0.0, -0.785)  # -45° yaw
+time.sleep(1)
+
+# Look up
+booster.RotateHead(0.3, 0.0)  # 17° pitch
+time.sleep(1)
+
+# Center
+booster.RotateHead(0.0, 0.0)
+print("Head test complete!")
+```
+
+Run:
+```bash
+python3 test_head.py
+```
+
+### 3. Test Camera
+
+```bash
+# Simple camera test (if cam_yolo.py exists)
+python3 cam_yolo.py
+```
+
+Or use OpenCV:
+```python
+import cv2
+
+cap = cv2.VideoCapture(0)
+ret, frame = cap.read()
+if ret:
+    print(f"Camera OK: {frame.shape}")
+    cv2.imwrite('test_frame.jpg', frame)
+else:
+    print("Camera failed!")
+cap.release()
+```
+
+### 4. Test Voice (pyttsx3)
+
+```bash
+# Test default TTS
+python3 -c "
+from whoami.voice_interaction import VoiceInteraction
+voice = VoiceInteraction(tts_engine='pyttsx3')
+voice.say('K-1 voice system operational')
+"
+```
+
+## F5-TTS Setup (High-Quality Voice)
+
+For natural-sounding neural TTS, install F5-TTS:
+
+### 1. Install F5-TTS
+
+```bash
+# Install PyTorch (if not installed)
+pip3 install torch torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# Install F5-TTS
+pip3 install f5-tts
+
+# Verify
+python3 -c "from f5_tts.api import F5TTS; print('F5-TTS OK')"
+```
+
+### 2. Prepare Voice Sample
+
+F5-TTS uses voice cloning, so you need a reference audio file:
+
+```bash
+# Create voices directory
+sudo mkdir -p /opt/whoami/voices
+
+# Record 10-30 second sample (or use pre-recorded)
+# Sample should be clear speech, no background noise
+```
+
+**Option A**: Record with arecord:
+```bash
+arecord -D hw:2,0 -f S16_LE -r 16000 -c 1 -d 15 /opt/whoami/voices/k1_voice.wav
+# Speak clearly for 15 seconds
+```
+
+**Option B**: Use pitch-shifted sample:
+```bash
+# Start with any adult voice sample
+sox adult_voice.wav /opt/whoami/voices/k1_voice.wav pitch 400
+```
+
+### 3. Configure F5-TTS
+
+Edit `config/k1_booster_config.json`:
+```json
+{
+  "voice_reporting": {
+    "enabled": true,
+    "engine": "f5-tts",
+    "fallback_engine": "pyttsx3",
+    "model_type": "F5-TTS",
+    "ref_audio": "/opt/whoami/voices/k1_voice.wav",
+    "ref_text": "This is the voice for the K-1 robot."
+  }
+}
+```
+
+### 4. Test F5-TTS
+
+```bash
+python3 examples/f5tts_voice_demo.py
+```
+
+See [F5-TTS Setup Guide](F5-TTS_SETUP.md) for details.
+
+## Running WhoAmI Features
+
+### 1. Face Recognition
+
+```bash
+# Run autonomous face exploration
+python3 examples/k1_autonomous_face_interaction.py wlan0
+```
+
+See [K-1 Autonomous Face Interaction](K1_AUTONOMOUS_FACE_INTERACTION.md) for details.
+
+### 2. Basic Controls
+
+If you have working control scripts:
+```bash
+# Basic movement controls
+python3 basic_controls.py 127.0.0.1
+
+# Camera feed
+python3 basic_cam.py
+
+# YOLO detection
+python3 cam_yolo.py
+```
+
+### 3. Voice Interaction
+
+```python
+from whoami.voice_interaction import VoiceInteraction
+
+voice = VoiceInteraction(
+    tts_engine='f5-tts',
+    f5tts_ref_audio='/opt/whoami/voices/k1_voice.wav'
+)
+
+voice.say("Hello, I am K-1!")
+```
+
+## Robot Operational Modes
+
+K-1 has five operational modes:
+
+| Mode | Value | Description | Head Control | Use Case |
+|------|-------|-------------|--------------|----------|
+| DAMP | `RobotMode.kDamp` | Motors relaxed, safe for handling | ❌ No | Safe shutdown, handling |
+| PREP | `RobotMode.kPrepare` | Standing, ready for commands | ✅ Yes | Normal operation |
+| WALK | `RobotMode.kWalk` | Walking mode | ✅ Yes | Locomotion |
+| DEBUG | `RobotMode.kDebug` | **Slow, safe testing mode** | ✅ Yes (slower) | **Development, testing** |
+| TEACH | `RobotMode.kTeach` | **Manual positioning mode** | 🔧 Manual | **Calibration, teaching** |
+
+**Mode Transition Sequence**:
+```python
+# Safe startup
+booster.ChangeMode(RobotMode.kDamp)
+time.sleep(1)
+
+booster.ChangeMode(RobotMode.kPrepare)
+time.sleep(2)  # Wait for robot to stand
+
+# Now you can control head, arms, etc.
+booster.RotateHead(0.0, 0.0)
+```
+
+**DEBUG Mode for Safe Testing** (RECOMMENDED for face interaction development):
+```python
+# Enable DEBUG mode - slower, safer movements
+booster.ChangeMode(RobotMode.kDebug)
+time.sleep(1.0)
+
+# Benefits for testing:
+# 1. SLOWER head movements - easier to observe camera tracking
+# 2. SAFER - reduced torque, won't damage hardware on collision
+# 3. MORE FEEDBACK - better diagnostic output
+# 4. PREDICTABLE - consistent, controlled movements for testing
+
+# Test head movement (slower, safer in DEBUG mode)
+booster.RotateHead(0.0, 0.785)  # Moves slower than in PREP
+time.sleep(2.0)  # More time to observe
+
+# Perfect for:
+# - Face detection testing (slow scan to verify camera coverage)
+# - Voice interaction development (smooth, predictable movements)
+# - Camera alignment (easy to see what Zod camera captures)
+# - Learning the system (safer for first-time testing)
+
+# Return to normal speed
+booster.ChangeMode(RobotMode.kPrepare)
+```
+
+**TEACH Mode for Manual Positioning** (for calibration and finding optimal angles):
+```python
+# Enable TEACH mode - motors allow manual positioning
+booster.ChangeMode(RobotMode.kTeach)
+time.sleep(0.5)
+
+# Now you can manually move Twiki's head with minimal resistance
+# Perfect for:
+# 1. Finding optimal camera angles for face detection
+#    - Move head to position where Zod camera sees faces clearly
+#    - Check camera feed while adjusting position
+# 2. Testing physical range of motion
+#    - Verify yaw ±60° and pitch -30° to 45° limits
+# 3. Recording ideal scan positions for autonomous exploration
+#    - Manually position, note the angles, use in scan pattern
+# 4. Calibrating home position
+#    - Ensure "center" (0, 0) is actually centered
+
+# Example workflow:
+# 1. Enable TEACH mode
+# 2. Open camera feed: http://192.168.x.x:8080
+# 3. Manually move head while watching feed
+# 4. When you find good position, record it:
+#    - Read position (if SDK provides GetHeadPosition())
+#    - Or estimate angles visually
+# 5. Use these positions in your scan pattern
+
+# Return to active control
+booster.ChangeMode(RobotMode.kPrepare)
+```
+
+## Troubleshooting
+
+### Booster SDK Connection Failed
+
+```bash
+# Check network interface
+ip addr show
+
+# Test DDS communication
+python3 -c "
+from booster_robotics_sdk_python import ChannelFactory
+ChannelFactory.Instance().Init(0, 'wlan0')
+print('DDS OK')
+"
+```
+
+### Head Not Moving
+
+**Check mode:**
+```python
+# Head only works in PREP or WALK mode
+booster.ChangeMode(RobotMode.kPrepare)
+time.sleep(2)
+booster.RotateHead(0.0, 0.0)
+```
+
+**Check ranges:**
+```python
+# K-1 head limits
+# Yaw: ±60° (±1.047 rad)
+# Pitch: -30° to 45° (-0.524 to 0.785 rad)
+
+# This will fail (out of range):
+booster.RotateHead(2.0, 2.0)  # ❌
+
+# This will work:
+booster.RotateHead(0.5, 0.5)  # ✅
+```
+
+### Camera Not Found
+
+```bash
+# List video devices (camera shows as "Zod")
+v4l2-ctl --list-devices
+
+# Should show something like:
+# Zod (usb-...):
+#   /dev/video0
+#   /dev/video1
+
+# Test OpenCV
+python3 -c "import cv2; print(cv2.VideoCapture(0).read()[0])"
+```
+
+### F5-TTS Out of Memory
+
+```bash
+# Use smaller model
+# In voice_interaction.py, use 'F5-TTS' (default) not 'E2-TTS'
+
+# Or increase swap
+sudo fallocate -l 8G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+```
+
+### Audio Not Working
 
 ```bash
 # List audio devices
 aplay -l
 arecord -l
 
-# Should show USB audio interface (e.g., hw:2,0)
-```
-
-### 2. Configure PulseAudio
-
-```bash
-# Edit PulseAudio config
-nano ~/.config/pulse/default.pa
-
-# Add:
-load-module module-alsa-sink device=hw:2,0
-load-module module-alsa-source device=hw:2,0
-
-# Restart PulseAudio
-pulseaudio -k
-pulseaudio --start
-```
-
-### 3. Test Audio
-
-```bash
-# Test speaker output
-speaker-test -D hw:2,0 -c 2
-
-# Test microphone input
-arecord -D hw:2,0 -f S16_LE -r 48000 -c 2 -d 5 test.wav
-aplay test.wav
-```
-
-### 4. Install Voice Synthesis
-
-```bash
-# Install pyttsx3 for text-to-speech
-pip3 install pyttsx3
-
-# Test voice reporting
-python3 -c "
-import pyttsx3
-engine = pyttsx3.init()
-engine.say('K-1 booster audio system initialized')
-engine.runAndWait()
-"
-```
-
-### 5. Install Speech Recognition (Optional)
-
-```bash
-# Download Vosk model
-mkdir -p /opt/whoami/models
-cd /opt/whoami/models
-wget https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
-unzip vosk-model-small-en-us-0.15.zip
-
-# Install Vosk
-pip3 install vosk
-```
-
-## Remote Access Setup
-
-### 1. Install VNC Server
-
-```bash
-# Install TigerVNC or x11vnc
-sudo apt install -y tigervnc-standalone-server
-
-# Configure VNC
-vncserver :0 -geometry 1920x1080 -depth 24
-
-# Set VNC password
-vncpasswd
-```
-
-### 2. Create VNC Service
-
-```bash
-# Create systemd service
-sudo nano /etc/systemd/system/vncserver@.service
-```
-
-Add:
-```ini
-[Unit]
-Description=Remote desktop service (VNC)
-After=syslog.target network.target
-
-[Service]
-Type=simple
-User=your_username
-PAMName=login
-PIDFile=/home/your_username/.vnc/%H%i.pid
-ExecStartPre=/bin/sh -c '/usr/bin/vncserver -kill %i > /dev/null 2>&1 || :'
-ExecStart=/usr/bin/vncserver %i -geometry 1920x1080 -depth 24 -alwaysshared
-ExecStop=/usr/bin/vncserver -kill %i
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-# Enable VNC service
-sudo systemctl enable vncserver@0.service
-sudo systemctl start vncserver@0.service
-```
-
-### 3. Configure Firewall
-
-```bash
-# Allow VNC port
-sudo ufw allow 5900/tcp
-
-# Allow SSH
-sudo ufw allow 22/tcp
-
-# Enable firewall
-sudo ufw enable
-```
-
-## Network Configuration
-
-### 1. Configure Dual Ethernet
-
-```bash
-# Edit netplan
-sudo nano /etc/netplan/01-network-manager-all.yaml
-```
-
-Add:
-```yaml
-network:
-  version: 2
-  renderer: NetworkManager
-  ethernets:
-    eth0:
-      dhcp4: true
-      dhcp4-overrides:
-        route-metric: 100
-    eth1:
-      dhcp4: true
-      dhcp4-overrides:
-        route-metric: 200
-```
-
-```bash
-# Apply configuration
-sudo netplan apply
-
-# Test both interfaces
-ping -I eth0 8.8.8.8
-ping -I eth1 8.8.8.8
-```
-
-### 2. Set Static IP (Optional)
-
-```yaml
-network:
-  version: 2
-  ethernets:
-    eth0:
-      addresses:
-        - 192.168.1.100/24
-      gateway4: 192.168.1.1
-      nameservers:
-        addresses: [8.8.8.8, 8.8.4.4]
-```
-
-## WhoAmI System Installation
-
-### 1. Run K-1 Setup Script
-
-```bash
-cd ~/whoami
-./jetson_setup_v2.sh --full
-
-# Or with K-1 specific flag (if added)
-./jetson_setup_k1.sh
-```
-
-### 2. Install Python Dependencies
-
-```bash
-# Activate virtual environment
-source ~/whoami_env/bin/activate
-
-# Install WhoAmI
-pip install -e .
-
-# Install audio dependencies
-pip install pyttsx3 vosk pyaudio sounddevice
-
-# Install remote access dependencies
-pip install flask flask-socketio
-```
-
-### 3. Copy K-1 Configuration
-
-```bash
-# Use K-1 specific config
-cp config/k1_booster_config.json config/active_config.json
-
-# Or set environment variable
-export WHOAMI_CONFIG="config/k1_booster_config.json"
-```
-
-## Testing and Validation
-
-### 1. Test Hardware Detection
-
-```bash
-python3 -m whoami.hardware_detector
-```
-
-### 2. Test Gimbal Systems
-
-```bash
-# Test head gimbal only
-python3 -m whoami.gimbal_controller --gimbal head --test
-
-# Test neck gimbal only
-python3 -m whoami.gimbal_controller --gimbal neck --test
-
-# Test coordinated movement
-python3 -m whoami.gimbal_controller --gimbal both --test
-```
-
-### 3. Test Audio System
-
-```bash
-# Test voice reporting
-python3 -c "
-from whoami.audio import VoiceReporter
-reporter = VoiceReporter()
-reporter.say('K-1 booster system operational')
-"
-
-# Test audio tracking
-python3 -m whoami.audio_tracker --test
-```
-
-### 4. Run Full System
-
-```bash
-# Start WhoAmI with K-1 config
-python3 -m whoami.gui --config config/k1_booster_config.json
-```
-
-## Remote Operation
-
-### 1. Connect via VNC
-
-From remote computer:
-```bash
-# Using VNC client
-vncviewer <jetson-ip>:5900
-
-# Or using macOS Screen Sharing
-open vnc://<jetson-ip>:5900
-```
-
-### 2. SSH Access
-
-```bash
-# Connect via SSH
-ssh username@<jetson-ip>
-
-# Run WhoAmI in headless mode
-python3 -m whoami.headless --config config/k1_booster_config.json
-```
-
-### 3. Web Interface (Optional)
-
-```bash
-# Start web server
-python3 -m whoami.web_interface --port 8080
-
-# Access from browser
-http://<jetson-ip>:8080
+# Test speaker
+speaker-test -t wav -c 2
+
+# Check PulseAudio
+pulseaudio --check || pulseaudio --start
 ```
 
 ## Performance Optimization
 
-### 1. Set Power Mode
+### 1. Set Max Performance
 
 ```bash
-# Set to maximum performance
+# Jetson Orin NX max performance mode
 sudo nvpmodel -m 0
 sudo jetson_clocks
 
@@ -464,134 +526,66 @@ sudo jetson_clocks
 sudo nvpmodel -q
 ```
 
-### 2. Monitor Performance
+### 2. Monitor Resources
 
 ```bash
-# Monitor GPU/CPU/Memory
+# Real-time stats
 tegrastats
 
-# Monitor temperature
-cat /sys/class/thermal/thermal_zone*/temp
+# GPU usage
+tegrastats | grep GR3D
 ```
 
-## Troubleshooting
+### 3. YOLO Optimization
 
-### Gimbal Not Responding
+Use smaller model for faster detection:
+```python
+from ultralytics import YOLO
 
-```bash
-# Check serial permissions
-ls -l /dev/ttyTHS*
+# Nano (fastest, 80 FPS on Orin NX)
+model = YOLO('yolov8n.pt')
 
-# Test serial port
-sudo minicom -D /dev/ttyTHS1 -b 1000000
+# Small (balanced)
+model = YOLO('yolov8s.pt')
 
-# Check servo power
-# Ensure 6-8V power supply connected to servos
+# Medium (slower but more accurate)
+model = YOLO('yolov8m.pt')
 ```
 
-### Audio Not Working
+## Safety Notes
 
-```bash
-# List audio devices
-aplay -L
-arecord -L
+### ⚠️ Important Safety Guidelines
 
-# Check PulseAudio
-pulseaudio --check
-pulseaudio --start
+1. **Always start in DAMP mode** - Motors are relaxed, safe to handle
+2. **Clear space before WALK mode** - Robot needs room to move
+3. **Emergency stop** - Change to DAMP mode immediately if needed
+4. **Battery monitoring** - Check battery level regularly
+5. **Head movement limits** - Stay within safe ranges to avoid damage
 
-# Test with speaker-test
-speaker-test -D hw:2,0
+```python
+# Emergency stop pattern
+def emergency_stop(booster):
+    booster.ChangeMode(RobotMode.kDamp)
+    print("EMERGENCY STOP - Robot in DAMP mode")
 ```
 
-### VNC Connection Issues
+## Next Steps
 
-```bash
-# Check VNC server status
-systemctl status vncserver@0
-
-# Check firewall
-sudo ufw status
-
-# Check VNC logs
-cat ~/.vnc/*.log
-```
-
-### Network Problems
-
-```bash
-# Check interface status
-ip link show
-ip addr show
-
-# Restart NetworkManager
-sudo systemctl restart NetworkManager
-
-# Test connectivity
-ping -c 4 8.8.8.8
-```
-
-## Operational Modes
-
-The K-1 booster supports three operational modes:
-
-### 1. Remote VNC Mode
-- Operator controls via VNC
-- Full GUI access
-- Bidirectional audio
-- Real-time video feedback
-
-### 2. Direct Access Mode
-- HDMI monitor, keyboard, mouse connected
-- Local operation
-- Full system access
-
-### 3. Autonomous Mode
-- Headless operation
-- Audio feedback for status
-- Automated behaviors
-- Remote monitoring via web interface
-
-Set mode in config:
-```json
-{
-  "operational_mode": {
-    "mode": "remote_vnc"
-  }
-}
-```
-
-## Maintenance
-
-### Daily Checks
-- Verify both Ethernet connections
-- Check gimbal movement range
-- Test audio I/O
-- Monitor system temperature
-
-### Weekly Checks
-- Update system packages
-- Check log files for errors
-- Verify VNC accessibility
-- Test failover between Ethernet interfaces
-
-### Monthly Checks
-- Recalibrate servos if needed
-- Update WhoAmI system
-- Backup configuration
-- Clean dust from heatsinks
+1. **Test basic features** - Head movement, voice, camera
+2. **Configure voice** - Set up F5-TTS with appropriate voice
+3. **Face recognition** - Run autonomous face exploration
+4. **Custom behaviors** - Develop your own interactions
 
 ## See Also
 
-- [Hardware Configuration Guide](HARDWARE_CONFIG_GUIDE.md)
-- [Installation Guide](../INSTALLATION.md)
-- [Gimbal 3DOF Guide](GIMBAL_3DOF_GUIDE.md)
-- [API Reference](API_REFERENCE.md)
+- [K-1 First Test Protocol](K1_FIRST_TEST.md) - Complete test procedures
+- [K-1 Autonomous Face Interaction](K1_AUTONOMOUS_FACE_INTERACTION.md) - Face scanning and conversation tracking
+- [F5-TTS Setup](F5-TTS_SETUP.md) - High-quality neural voice setup
+- [Booster SDK Documentation](https://github.com/BoosterRobotics/booster_robotics_sdk) - Official SDK docs
 
 ## Support
 
-For issues specific to K-1 booster:
-- Check hardware profiles: `config/hardware/hardware_profiles.json`
-- Review K-1 config: `config/k1_booster_config.json`
-- Run diagnostics: `python3 -m whoami.diagnostics --k1`
-- Open GitHub issue with `k1-booster` tag
+For K-1 issues:
+- **Booster Robotics Support** - Hardware and SDK issues
+- **WhoAmI Issues** - [GitHub Issues](https://github.com/alanchelmickjr/whoami/issues)
+- **Community** - Tag with `k1-robot`

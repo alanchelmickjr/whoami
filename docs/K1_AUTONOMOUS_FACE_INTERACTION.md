@@ -75,7 +75,7 @@ The K-1 can autonomously explore its environment, find faces, and engage in pers
 │                                                         │
 │  ┌─────────────┐      ┌──────────────┐                │
 │  │   Camera    │──────▶│ YOLO Face    │                │
-│  │  (ZED/OAK)  │      │  Detection   │                │
+│  │    (Zod)    │      │  Detection   │                │
 │  └─────────────┘      └──────┬───────┘                │
 │                              │                          │
 │                              ▼                          │
@@ -447,7 +447,7 @@ frame_small = cv2.resize(frame, (640, 480))
 
 ## Next Steps
 
-1. **Add camera integration** - Connect to ZED/OAK camera feed
+1. **Add camera integration** - Connect to Zod camera feed
 2. **Integrate with ROS2** - Publish/subscribe to camera topics
 3. **Add gesture recognition** - Wave detection for greetings
 4. **Multi-robot coordination** - Share profiles via Gun.js
