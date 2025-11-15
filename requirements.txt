@@ -1,7 +1,7 @@
 # Core dependencies for facial recognition with Oak D Series 3
 depthai>=2.24.0
 opencv-python>=4.8.0
-numpy>=1.24.0
+numpy>=1.24.0,<2.0.0  # <2.0.0 required for depthai compatibility
 pillow>=10.0.0
 
 # Face recognition
