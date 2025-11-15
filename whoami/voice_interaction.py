@@ -36,10 +36,18 @@ import json
 # Text-to-Speech
 try:
     import pyttsx3
-    TTS_AVAILABLE = True
+    PYTTSX3_AVAILABLE = True
 except ImportError:
-    TTS_AVAILABLE = False
-    logging.warning("pyttsx3 not available. Text-to-speech disabled.")
+    PYTTSX3_AVAILABLE = False
+    logging.warning("pyttsx3 not available.")
+
+# F5-TTS (high-quality neural TTS)
+try:
+    from whoami.tts_f5 import F5TTSEngine
+    F5TTS_AVAILABLE = True
+except ImportError:
+    F5TTS_AVAILABLE = False
+    logging.warning("F5-TTS not available.")
 
 # Speech Recognition
 try:
@@ -98,13 +106,16 @@ class VoiceInteraction:
         sample_rate: int = 16000,
         timeout: float = 5.0,
         phrase_time_limit: float = 5.0,
-        confidence_threshold: float = 0.7
+        confidence_threshold: float = 0.7,
+        f5tts_ref_audio: Optional[str] = None,
+        f5tts_ref_text: Optional[str] = None,
+        f5tts_model_type: str = "F5-TTS"
     ):
         """
         Initialize voice interaction system
 
         Args:
-            tts_engine: Text-to-speech engine ('pyttsx3')
+            tts_engine: Text-to-speech engine ('pyttsx3' or 'f5-tts')
             sr_engine: Speech recognition engine ('google' or 'vosk')
             vosk_model_path: Path to Vosk model for offline recognition
             audio_device: Audio device identifier (e.g., 'hw:2,0')
@@ -112,6 +123,9 @@ class VoiceInteraction:
             timeout: Timeout for voice input in seconds
             phrase_time_limit: Max duration for a single phrase
             confidence_threshold: Minimum confidence for speech recognition
+            f5tts_ref_audio: Path to reference audio for F5-TTS voice cloning
+            f5tts_ref_text: Transcription of reference audio for F5-TTS
+            f5tts_model_type: F5-TTS model type ('F5-TTS' or 'E2-TTS')
         """
         self.tts_engine_name = tts_engine
         self.sr_engine_name = sr_engine
@@ -138,16 +152,41 @@ class VoiceInteraction:
 
         # Initialize TTS engine
         self.tts_engine = None
-        if TTS_AVAILABLE and tts_engine == 'pyttsx3':
-            try:
-                self.tts_engine = pyttsx3.init()
-                # Configure voice properties
-                self.tts_engine.setProperty('rate', 150)  # Speed
-                self.tts_engine.setProperty('volume', 0.9)  # Volume (0.0 to 1.0)
-                logger.info("Text-to-speech engine initialized (pyttsx3)")
-            except Exception as e:
-                logger.error(f"Failed to initialize TTS engine: {e}")
-                self.tts_engine = None
+        self.tts_engine_type = tts_engine
+
+        if tts_engine == 'f5-tts' or tts_engine == 'f5tts':
+            # Initialize F5-TTS (high-quality neural TTS)
+            if F5TTS_AVAILABLE:
+                try:
+                    self.tts_engine = F5TTSEngine(
+                        model_type=f5tts_model_type,
+                        default_ref_audio=f5tts_ref_audio,
+                        default_ref_text=f5tts_ref_text,
+                        output_device=self.audio_output_device
+                    )
+                    logger.info("F5-TTS engine initialized (high-quality neural TTS)")
+                except Exception as e:
+                    logger.error(f"Failed to initialize F5-TTS: {e}")
+                    logger.warning("Falling back to pyttsx3")
+                    tts_engine = 'pyttsx3'
+            else:
+                logger.warning("F5-TTS not available, falling back to pyttsx3")
+                tts_engine = 'pyttsx3'
+
+        if tts_engine == 'pyttsx3' and self.tts_engine is None:
+            # Initialize pyttsx3 (basic TTS)
+            if PYTTSX3_AVAILABLE:
+                try:
+                    self.tts_engine = pyttsx3.init()
+                    # Configure voice properties
+                    self.tts_engine.setProperty('rate', 150)  # Speed
+                    self.tts_engine.setProperty('volume', 0.9)  # Volume (0.0 to 1.0)
+                    logger.info("Text-to-speech engine initialized (pyttsx3)")
+                except Exception as e:
+                    logger.error(f"Failed to initialize pyttsx3: {e}")
+                    self.tts_engine = None
+            else:
+                logger.error("No TTS engine available")
 
         # Initialize speech recognition
         self.recognizer = None
@@ -201,11 +240,17 @@ class VoiceInteraction:
             return False
 
         try:
-            self.tts_engine.say(text)
-            if wait:
-                self.tts_engine.runAndWait()
-            logger.debug(f"TTS: {text}")
-            return True
+            # Check if using F5-TTS or pyttsx3
+            if isinstance(self.tts_engine, F5TTSEngine):
+                # F5-TTS engine
+                return self.tts_engine.say(text, wait=wait)
+            else:
+                # pyttsx3 engine
+                self.tts_engine.say(text)
+                if wait:
+                    self.tts_engine.runAndWait()
+                logger.debug(f"TTS: {text}")
+                return True
         except Exception as e:
             logger.error(f"TTS error: {e}")
             return False

@@ -91,11 +91,14 @@
     "features": {
       "voice_reporting": {
         "enabled": true,
-        "engine": "pyttsx3",
-        "voice": "english",
+        "engine": "f5-tts",
+        "fallback_engine": "pyttsx3",
+        "model_type": "F5-TTS",
+        "ref_audio": "/opt/whoami/voices/k1_default_voice.wav",
+        "ref_text": "This is the default voice for the K-1 robot.",
         "rate": 150,
         "volume": 0.8,
-        "description": "Text-to-speech for status reporting"
+        "description": "High-quality neural text-to-speech (F5-TTS) with voice cloning, fallback to pyttsx3"
       },
 
       "audio_tracking": {
