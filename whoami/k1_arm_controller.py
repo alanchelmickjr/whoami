@@ -2,20 +2,23 @@
 K-1 Booster Arm Controller
 
 High-level arm control for the K-1 humanoid robot using Booster SDK.
-Uses B1LocoClient methods for gestures and hand control.
+Uses B1LocoClient methods for simple gestures.
+
+K-1 Hardware:
+- Round nub hands (NO fingers or dexterous hands)
+- Can wave and do basic arm movements
+- Built for fighting/repurposed for greeting
 
 Based on Booster Robotics SDK:
 - https://github.com/BoosterRobotics/booster_robotics_sdk
 - https://github.com/arminforoughi/booster_k1
 
-Available SDK Methods:
+Available SDK Methods for K-1:
 - WaveHand(action) - Wave gesture
-- Handshake(action) - Handshake gesture
-- MoveHandEndEffectorV2(posture, duration, hand_index) - Move hand endpoint
-- ControlDexterousHand(finger_params, hand_index) - Control individual fingers
-- ControlGripper(motion_param, mode, hand_index) - Gripper control
+- Handshake(action) - Handshake gesture (maybe)
+- MoveHandEndEffectorV2(posture, duration, hand_index) - Move arm endpoint
 
-Note: Use high-level SDK methods. Low-level joint control not recommended.
+Note: K-1 has NUBS, not fingers. No ControlDexterousHand or finger control!
 """
 
 import logging
@@ -30,9 +33,7 @@ try:
     from booster_robotics_sdk_python import (
         B1LocoClient,
         B1HandIndex,
-        DexterousFingerParameter,
         Posture,
-        # Add other imports as needed from SDK
     )
     BOOSTER_SDK_AVAILABLE = True
 except ImportError:
@@ -41,9 +42,7 @@ except ImportError:
 
 
 class HandAction(Enum):
-    """Hand gesture actions (from SDK examples)"""
-    OPEN = "open"
-    CLOSE = "close"
+    """Hand gesture actions"""
     WAVE = "wave"
     HANDSHAKE = "handshake"
 
@@ -58,12 +57,11 @@ class K1ArmController:
     """
     High-level arm controller for K-1 using Booster SDK
 
-    Uses SDK's built-in gesture methods instead of low-level joint control.
+    K-1 has round nub hands (no fingers), so only basic gestures available.
 
     Example usage:
         controller = K1ArmController(booster_client)
         controller.wave(hand=HandSide.RIGHT)
-        controller.handshake()
     """
 
     def __init__(
@@ -111,20 +109,18 @@ class K1ArmController:
             return False
 
         try:
-            # Use SDK's built-in WaveHand method
-            # From SDK: WaveHand(action) where action is kHandOpen/kHandClose
-            # This is a simplified implementation - SDK may have dedicated wave method
-
             logger.info(f"Waving {hand.name} hand")
 
-            # Wave pattern: open -> close -> open
-            # Note: Actual SDK may have WaveHand() method that handles this automatically
-            # Check SDK docs for exact API
+            # Use SDK's built-in WaveHand method
+            # From SDK binding: WaveHand(action)
+            # Need to verify exact API - may need action parameter like kHandOpen/kHandClose
 
-            # For now, using placeholder - NEED TO VERIFY ACTUAL SDK API
+            # Placeholder - VERIFY WITH ACTUAL SDK
             logger.warning("Wave gesture using placeholder - verify SDK API")
-            # self.booster.WaveHand(action)  # Actual SDK call
+            # hand_index = B1HandIndex.kLeftHand if hand == HandSide.LEFT else B1HandIndex.kRightHand
+            # self.booster.WaveHand(action)  # Need to determine correct action param
 
+            time.sleep(duration)
             return True
 
         except Exception as e:
@@ -133,7 +129,7 @@ class K1ArmController:
 
     def handshake(self, duration: float = 3.0) -> bool:
         """
-        Perform handshake gesture
+        Perform handshake gesture (if supported)
 
         Args:
             duration: Duration of handshake in seconds
@@ -153,26 +149,26 @@ class K1ArmController:
         try:
             logger.info("Performing handshake gesture")
 
-            # Use SDK's built-in Handshake method
-            # From SDK: Handshake(action)
-            # NEED TO VERIFY ACTUAL SDK API
+            # Use SDK's built-in Handshake method (if available)
+            # From SDK binding: Handshake(action)
             logger.warning("Handshake using placeholder - verify SDK API")
-            # self.booster.Handshake(action)  # Actual SDK call
+            # self.booster.Handshake(action)
 
+            time.sleep(duration)
             return True
 
         except Exception as e:
             logger.error(f"Handshake gesture failed: {e}")
             return False
 
-    def move_hand(
+    def move_arm(
         self,
         hand: HandSide,
         posture: 'Posture',
         duration_ms: int = 1000
     ) -> bool:
         """
-        Move hand end effector to target posture
+        Move arm end effector to target posture
 
         Args:
             hand: Which hand (LEFT or RIGHT)
@@ -183,7 +179,7 @@ class K1ArmController:
             True if successful, False otherwise
         """
         if self.simulate:
-            logger.info(f"[SIMULATE] Moving {hand.name} hand to posture")
+            logger.info(f"[SIMULATE] Moving {hand.name} arm to posture")
             time.sleep(duration_ms / 1000.0)
             return True
 
@@ -192,7 +188,7 @@ class K1ArmController:
             return False
 
         try:
-            logger.info(f"Moving {hand.name} hand to target posture")
+            logger.info(f"Moving {hand.name} arm to target posture")
 
             # Use SDK's MoveHandEndEffectorV2
             # From SDK: MoveHandEndEffectorV2(target_posture, time_millis, hand_index)
@@ -207,126 +203,8 @@ class K1ArmController:
             return result == 0  # Assuming 0 = success
 
         except Exception as e:
-            logger.error(f"Move hand failed: {e}")
+            logger.error(f"Move arm failed: {e}")
             return False
-
-    def control_fingers(
-        self,
-        hand: HandSide,
-        finger_params: list,  # List of DexterousFingerParameter
-    ) -> bool:
-        """
-        Control individual fingers
-
-        Args:
-            hand: Which hand (LEFT or RIGHT)
-            finger_params: List of DexterousFingerParameter objects
-                          Each has: seq (finger index), angle, force, speed
-
-        Returns:
-            True if successful, False otherwise
-        """
-        if self.simulate:
-            logger.info(f"[SIMULATE] Controlling {hand.name} hand fingers")
-            return True
-
-        if not self.booster:
-            logger.error("No booster client available")
-            return False
-
-        try:
-            logger.info(f"Controlling {hand.name} hand fingers")
-
-            # Use SDK's ControlDexterousHand
-            # From SDK: ControlDexterousHand(finger_params, hand_index)
-            hand_index = B1HandIndex.kLeftHand if hand == HandSide.LEFT else B1HandIndex.kRightHand
-
-            result = self.booster.ControlDexterousHand(
-                finger_params,
-                hand_index
-            )
-
-            return result == 0  # Assuming 0 = success
-
-        except Exception as e:
-            logger.error(f"Control fingers failed: {e}")
-            return False
-
-    # Predefined gestures from basic_controls.py example
-
-    def hand_rock(self, hand: HandSide = HandSide.RIGHT) -> bool:
-        """Rock gesture - all fingers closed (fist)"""
-        if not BOOSTER_SDK_AVAILABLE or self.simulate:
-            logger.info(f"[SIMULATE] Rock gesture with {hand.name} hand")
-            return True
-
-        # From basic_controls.py: all fingers at 0° angle
-        fingers = []
-        for i in range(5):  # 5 fingers
-            fingers.append(DexterousFingerParameter(
-                seq=i,
-                angle=0,
-                force=400,
-                speed=800
-            ))
-
-        return self.control_fingers(hand, fingers)
-
-    def hand_paper(self, hand: HandSide = HandSide.RIGHT) -> bool:
-        """Paper gesture - all fingers extended (open hand)"""
-        if not BOOSTER_SDK_AVAILABLE or self.simulate:
-            logger.info(f"[SIMULATE] Paper gesture with {hand.name} hand")
-            return True
-
-        # From basic_controls.py: all fingers at 1000° (fully extended)
-        fingers = []
-        for i in range(5):
-            fingers.append(DexterousFingerParameter(
-                seq=i,
-                angle=1000,
-                force=400,
-                speed=800
-            ))
-
-        return self.control_fingers(hand, fingers)
-
-    def hand_scissor(self, hand: HandSide = HandSide.RIGHT) -> bool:
-        """Scissor gesture - index and middle fingers extended"""
-        if not BOOSTER_SDK_AVAILABLE or self.simulate:
-            logger.info(f"[SIMULATE] Scissor gesture with {hand.name} hand")
-            return True
-
-        # From basic_controls.py: fingers 2-3 at 1000°, others 0°
-        finger_angles = [0, 0, 1000, 1000, 0]  # Thumb, Index, Middle, Ring, Pinky
-        fingers = []
-        for i, angle in enumerate(finger_angles):
-            fingers.append(DexterousFingerParameter(
-                seq=i,
-                angle=angle,
-                force=400,
-                speed=800
-            ))
-
-        return self.control_fingers(hand, fingers)
-
-    def hand_ok(self, hand: HandSide = HandSide.RIGHT) -> bool:
-        """OK gesture - thumb and index finger form circle"""
-        if not BOOSTER_SDK_AVAILABLE or self.simulate:
-            logger.info(f"[SIMULATE] OK gesture with {hand.name} hand")
-            return True
-
-        # From basic_controls.py: mixed angles
-        finger_angles = [350, 0, 1000, 1000, 500]
-        fingers = []
-        for i, angle in enumerate(finger_angles):
-            fingers.append(DexterousFingerParameter(
-                seq=i,
-                angle=angle,
-                force=400,
-                speed=800
-            ))
-
-        return self.control_fingers(hand, fingers)
 
 
 # Example usage
@@ -337,6 +215,8 @@ if __name__ == '__main__':
     )
 
     print("K-1 Arm Controller Demo")
+    print("=" * 60)
+    print("Note: K-1 has round nub hands (no fingers)")
     print("=" * 60)
 
     if not BOOSTER_SDK_AVAILABLE:
@@ -352,7 +232,7 @@ if __name__ == '__main__':
         print("  controller = K1ArmController(booster)")
         controller = K1ArmController(simulate=True)
 
-    # Demo gestures
+    # Demo gestures (only what K-1 can do with nubs)
     print("\nTesting gestures in simulation mode:")
 
     print("\n1. Wave gesture")
@@ -361,13 +241,6 @@ if __name__ == '__main__':
     print("\n2. Handshake gesture")
     controller.handshake()
 
-    print("\n3. Rock-paper-scissors gestures")
-    controller.hand_rock()
-    time.sleep(0.5)
-    controller.hand_paper()
-    time.sleep(0.5)
-    controller.hand_scissor()
-    time.sleep(0.5)
-    controller.hand_ok()
-
     print("\nDemo complete!")
+    print("\nNote: K-1's nub hands cannot do finger control.")
+    print("For dexterous hand control, see Robi with Feetech servos.")
