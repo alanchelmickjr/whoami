@@ -2,6 +2,8 @@
 
 Complete installation guide for setting up the WhoAmI Face Recognition System on NVIDIA Jetson Orin Nano with OAK-D Series 3 camera.
 
+**Privacy Philosophy:** WhoAmI gives robots the right to remember people they meet through local, encrypted storage - NOT cloud-based face farming. See [README](README.md#security--privacy) for our privacy-first design principles.
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)
